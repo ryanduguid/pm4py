@@ -19,6 +19,9 @@ repository root:
 .\.venv\Scripts\python.exe examples\scheduled_business_hours.py
 ```
 
+On Linux, run `python examples/scheduled_business_hours.py` with the source
+installed in the active virtual environment.
+
 The source timestamps include explicit offsets and are stored in UTC. The
 selected schedule opens on Sunday from midnight to 4 am in Sydney.
 Holiday exclusions are disabled for this synthetic example.
@@ -98,21 +101,33 @@ All 42 checks pass on CPython 3.11.16 and 3.13.15, with pandas, Polars and
 Workalendar installed. The minimum Python environment runs these fixtures
 without the optional Arrow conversion package.
 
-The repository's `python execute_tests.py --pipeline` command, run from
-`tests`, completes 981 test methods: 941 pass, 11 are skipped and 29 fail.
+The same 42 checks pass on Linux under WSL2 with CPython 3.14.4, pandas 3.0.5,
+Polars 1.44.2 and Workalendar 17.0.0. That environment uses the system IANA
+timezone database, version 2026c. Run `python tests/business_hours_test.py`
+from the repository root after installing the source and optional extras.
+
+On Windows, the repository's `python execute_tests.py --pipeline` command,
+run from `tests`, completes 981 test methods: 941 pass, 11 are skipped and 29 fail.
 One test module also fails to import. The failure identities match the clean
 upstream baseline. Missing Graphviz executables, Windows file locks and a
 dotted-chart assertion account for these existing failures. There are no
 additional failures in this run.
+
+On Linux, the same command completes 981 test methods: 948 pass, 11 are skipped
+and 22 fail, with the same one module import failure. Clean upstream in the
+same environment runs 939 methods: 906 pass, 11 are skipped and the same 22
+fail. The failure identities and import failure match, with no added failures.
+The missing Graphviz executable and dotted-chart assertion remain in this run.
 
 Flake8 passes on the shared helper, focused tests and example. Existing style
 findings remain elsewhere in the touched upstream modules; modified lines add
 none. Aikido's local path scan of the nine changed Python files reports no
 findings.
 
-These runs cover Windows. A separate distribution build, Linux or macOS runs,
-and upstream CI have not been checked. The repository defines no dedicated
-build or lint command; its declared Flake8 developer tool was run manually.
+The declared build tool, run as `python -m build`, produces the source
+distribution and wheel on Linux. The installed wheel also passes all 42 focused
+checks. macOS and upstream CI have not been checked. The repository defines no
+dedicated build or lint command; its declared developer tools were run manually.
 
 A helper benchmark on this Windows machine uses a Sydney schedule from
 9 am to 5 pm, Monday to Friday. Holiday exclusions are disabled and boundary
@@ -130,10 +145,10 @@ requires separate measurement.
 
 ## Contribution status
 
-This is a local prototype on the `scheduled-business-time` branch of the
+This contribution is published on the `scheduled-business-time` branch of the
 [personal PM4Py fork](https://github.com/ryanduguid/pm4py), based on upstream
-commit `24a3bf610aea6ecc4938b1864b3ad71fcfb82084`. It has not been submitted
-upstream. PM4Py's
+commit `24a3bf610aea6ecc4938b1864b3ad71fcfb82084`. Upstream review remains
+pending. PM4Py's
 [contribution guide](https://processintelligence.solutions/pm4py/contributing)
 requires a CLA, whose operative terms are sent during the contribution process.
 No agreement has been signed.
