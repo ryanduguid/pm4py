@@ -50,7 +50,7 @@ enabled_tests = [
     "SerializationLogUtilsCoverageTest", "PetriStochasticSerializationCoverageTest",
     "PowlTreeGenerationDeepCoverageTest",
     "RemainingAlgorithmsCoverageTest", "IoFilteringEdgeCoverageTest",
-    "FinalBufferCoverageTest"
+    "FinalBufferCoverageTest", "BusinessHoursTest"
 ]
 
 if importlib.util.find_spec("polars"):
@@ -64,6 +64,13 @@ if importlib.util.find_spec("polars"):
 
 loader = unittest.TestLoader()
 suite = unittest.TestSuite()
+
+if "BusinessHoursTest" in enabled_tests:
+    from tests.business_hours_test import (
+        BusinessHoursTest, ScheduledBusinessHoursTest,
+    )
+    suite.addTests(loader.loadTestsFromTestCase(BusinessHoursTest))
+    suite.addTests(loader.loadTestsFromTestCase(ScheduledBusinessHoursTest))
 
 # 'failed' is used to count how many tests or imports fail.
 failed = 0
