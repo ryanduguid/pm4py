@@ -362,15 +362,15 @@ def act_dist(var_list_1, var_list_2, log1, log2, freq_thres):
         min_len = len(var_list_2)
         max_var = var_list_1
         min_var = var_list_2
-        var_count_max = sublog2df(log1, freq_thres)["count"]
-        var_count_min = sublog2df(log2, freq_thres)["count"]
+        var_count_max = sublog2df(log1, freq_thres, len(var_list_1))["count"]
+        var_count_min = sublog2df(log2, freq_thres, len(var_list_2))["count"]
     else:
         max_len = len(var_list_2)
         min_len = len(var_list_1)
         max_var = var_list_2
         min_var = var_list_1
-        var_count_max = sublog2df(log2, freq_thres)["count"]
-        var_count_min = sublog2df(log1, freq_thres)["count"]
+        var_count_max = sublog2df(log2, freq_thres, len(var_list_2))["count"]
+        var_count_min = sublog2df(log1, freq_thres, len(var_list_1))["count"]
 
     dist_matrix = np.zeros((max_len, min_len))
 

@@ -12,6 +12,7 @@ from pm4py.algo.clustering.trace_attribute_driven.variants import (
     suc_dist_calc,
 )
 from pm4py.objects.log.obj import Event, EventLog, Trace
+from pm4py.util import variants_util
 
 
 class ClusteringDistanceCoverageTest(unittest.TestCase):
@@ -85,15 +86,9 @@ class ClusteringDistanceCoverageTest(unittest.TestCase):
         variants1 = filter_subsets.sublog2varlist(log1, 1, 10)
         variants2 = filter_subsets.sublog2varlist(log2, 1, 10)
         self.assertEqual(3, len(act_dist_calc.occu_var_act(variants1[0])))
-        original_sublog2df = filter_subsets.sublog2df
-        with mock.patch.object(
-            filter_subsets,
-            "sublog2df",
-            side_effect=lambda log, threshold: original_sublog2df(log, threshold, 10),
-        ):
-            legacy_distance = filter_subsets.act_dist(
-                variants1, variants2, log1, log2, 1
-            )
+        legacy_distance = filter_subsets.act_dist(
+            variants1, variants2, log1, log2, 1
+        )
         results = [
             act_dist_calc.act_sim(variants1, variants2, log1, log2, 1, 10),
             act_dist_calc.act_sim(variants1, variants2, log1, log2, 1, 10, parameters={"single": True}),
@@ -108,6 +103,63 @@ class ClusteringDistanceCoverageTest(unittest.TestCase):
             legacy_distance,
         ]
         self.assertTrue(all(value is not None for value in results))
+
+    def test_legacy_activity_distance_forwards_variant_counts(self):
+        for length1, length2 in ((3, 1), (1, 3)):
+            with self.subTest(lengths=(length1, length2)):
+                log1, log2 = object(), object()
+                variants1, variants2 = [["A"]] * length1, [["A"]] * length2
+
+                def counts(log, threshold, num):
+                    return pd.DataFrame({"count": [1] * num})
+
+                with mock.patch.object(
+                    filter_subsets, "sublog2df", autospec=True,
+                    side_effect=counts,
+                ) as lookup:
+                    result = filter_subsets.act_dist(
+                        variants1, variants2, log1, log2, 2
+                    )
+
+                expected = [
+                    mock.call(log1, 2, length1), mock.call(log2, 2, length2)
+                ]
+                if length1 < length2:
+                    expected.reverse()
+                self.assertEqual(lookup.call_args_list, expected)
+                self.assertEqual(result.shape, (length1, length2))
+                self.assertTrue(np.isfinite(result).all())
+
+    def test_legacy_activity_distance_real_helpers_both_directions(self):
+        log1 = self._log([(("Z", "A"), 5), (("A",), 2), (("B",), 1)], "one")
+        log2 = self._log([(("A",), 3)], "two")
+        for first, second in ((log1, log2), (log2, log1)):
+            with self.subTest(first_log_size=len(first)):
+                variants1 = filter_subsets.sublog2varlist(first, 1, 10)
+                variants2 = filter_subsets.sublog2varlist(second, 1, 10)
+                result = filter_subsets.act_dist(
+                    variants1, variants2, first, second, 1
+                )
+                self.assertEqual(
+                    result.shape, (len(variants1), len(variants2))
+                )
+                self.assertTrue(np.isfinite(result).all())
+
+    def test_variant_list_length_preserves_selected_dataframe_variants(self):
+        log = self._log([(("Z", "A"), 5), (("A",), 2), (("B",), 1)], "one")
+        selections = ((4, 1), (4, 2), (6, 2), (1, 1), (1, 10), (6, 0))
+        for threshold, num in selections:
+            with self.subTest(threshold=threshold, num=num):
+                variants = filter_subsets.sublog2varlist(log, threshold, num)
+                dataframe = filter_subsets.sublog2df(
+                    log, threshold, len(variants)
+                )
+                selected = [
+                    variants_util.get_activities_from_variant(value)
+                    for value in dataframe["variant"]
+                ]
+                self.assertEqual(len(variants), len(dataframe))
+                self.assertCountEqual(variants, selected)
 
     def test_succession_and_combined_distance_variants(self):
         log1, log2 = self._logs()
