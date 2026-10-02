@@ -118,9 +118,15 @@ class BpmnDeepCoverageTest(unittest.TestCase):
             self.assertEqual(1, len(semantics.weak_execute(first, marking, graph)))
             self.assertIn(gateway, semantics.enabled_nodes(graph, Marking({gateway: 1})))
             self.assertFalse(semantics.is_enabled(BPMN.Task(name="outside"), graph, Marking()))
-            self.assertIsNone(semantics.try_to_execute(first, graph, Marking()))
-            with self.assertRaises(TypeError):
-                semantics.execute(first, graph, Marking({first: 1}))
+            for execute in (semantics.execute, semantics.try_to_execute):
+                with self.subTest(execute=execute.__name__):
+                    disabled_marking = Marking({start: 1})
+                    self.assertIsNone(execute(first, graph, disabled_marking))
+                    self.assertEqual({start: 1}, dict(disabled_marking))
+                    enabled_marking = Marking({first: 1})
+                    outputs = execute(first, graph, enabled_marking)
+                    self.assertEqual([{gateway: 1}], [dict(output) for output in outputs])
+                    self.assertEqual({first: 1}, dict(enabled_marking))
 
         converging = BPMN.ParallelGateway(
             gateway_direction=BPMN.Gateway.Direction.CONVERGING
@@ -143,6 +149,17 @@ class BpmnDeepCoverageTest(unittest.TestCase):
         semantics.execute_token_flow(terminate, marking, graph)
         self.assertNotIn(other, marking)
         self.assertEqual(1, marking[terminate])
+
+    def test_end_event_execution_uses_process_graph(self):
+        graph = BPMN()
+        end = BPMN.NormalEndEvent(name="end", process=graph.get_process_id())
+        graph.add_node(end)
+        for execute in (semantics.execute, semantics.try_to_execute):
+            with self.subTest(execute=execute.__name__):
+                marking = Marking({end: 1})
+                outputs = execute(end, graph, marking)
+                self.assertEqual([{}], [dict(output) for output in outputs])
+                self.assertEqual({end: 1}, dict(marking))
 
 
 if __name__ == "__main__":
