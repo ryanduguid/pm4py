@@ -180,6 +180,92 @@ class ClusteringDistanceCoverageTest(unittest.TestCase):
         ]
         self.assertTrue(all(np.isscalar(value) for value in results))
 
+    def test_variant_dataframe_preserves_frequency_order(self):
+        log = self._log([(("Z", "A"), 5), (("A",), 2)], "one")
+        dataframe = filter_subsets.sublog2df(log, 4, 2)
+        self.assertEqual(dataframe["variant"].tolist(), [("Z", "A"), ("A",)])
+        self.assertEqual(dataframe["count"].tolist(), [5, 2])
+        self.assertEqual(dataframe.columns.tolist(), ["variant", "count"])
+        self.assertEqual(dataframe.index.tolist(), [0, 1])
+        selected = [
+            variants_util.get_activities_from_variant(value)
+            for value in dataframe["variant"]
+        ]
+        self.assertEqual(selected, filter_subsets.sublog2varlist(log, 4, 2))
+
+    def test_variant_dataframe_selection_and_schema(self):
+        log = self._log(
+            [(("Z", "A"), 5), (("B",), 3), (("C",), 3), (("A",), 1)],
+            "one",
+        )
+        # Case statistics order equal counts by descending variant.
+        variants = [("Z", "A"), ("C",), ("B",), ("A",)]
+        counts = [5, 3, 3, 1]
+        cases = ((3, 1, 3), (6, 2, 2), (6, 10, 4), (3, 0, 3),
+                 (6, 0, 0), (6, -1, 3), (6, None, 4))
+        for threshold, num, size in cases:
+            with self.subTest(threshold=threshold, num=num):
+                dataframe = filter_subsets.sublog2df(log, threshold, num)
+                self.assertEqual(
+                    dataframe["variant"].tolist(), variants[:size]
+                )
+                self.assertEqual(dataframe["count"].tolist(), counts[:size])
+                self.assertEqual(
+                    dataframe.columns.tolist(), ["variant", "count"]
+                )
+                self.assertIsInstance(dataframe.index, pd.RangeIndex)
+                self.assertEqual(dataframe.index.tolist(), list(range(size)))
+                self.assertEqual(dataframe.dtypes.astype(str).tolist(),
+                                 ["object", "int64"])
+                if num is not None and num >= 0:
+                    selected = [
+                        variants_util.get_activities_from_variant(value)
+                        for value in dataframe["variant"]
+                    ]
+                    self.assertEqual(
+                        selected,
+                        filter_subsets.sublog2varlist(log, threshold, num),
+                    )
+
+    def test_legacy_activity_distance_uses_corresponding_weights(self):
+        log1 = self._log([(("Z", "A"), 5), (("A",), 2)], "one")
+        log2 = self._log([(("A",), 3)], "two")
+        expected = np.array([[15 / np.sqrt(2)], [6]])
+        for first, second, matrix in (
+            (log1, log2, expected), (log2, log1, expected.T)
+        ):
+            with self.subTest(first_log_size=len(first)):
+                variants1 = filter_subsets.sublog2varlist(first, 4, 2)
+                variants2 = filter_subsets.sublog2varlist(second, 4, 2)
+                result = filter_subsets.act_dist(
+                    variants1, variants2, first, second, 4
+                )
+                np.testing.assert_allclose(result, matrix)
+
+    def test_clustering_consumers_use_corresponding_weights(self):
+        log1 = self._log([(("Z", "A"), 5), (("A", "B"), 2)], "one")
+        log2 = self._log([(("A", "B"), 3)], "two")
+        # Cosine distances are 1/2 for activities and 1 for successions.
+        # Their frequency weight is 15 out of a total 21.
+        for first, second in ((log1, log2), (log2, log1)):
+            variants1 = filter_subsets.sublog2varlist(first, 4, 2)
+            variants2 = filter_subsets.sublog2varlist(second, 4, 2)
+            for single in (False, True):
+                arguments = (variants1, variants2, first, second, 4, 2)
+                for helper, expected, extra in (
+                    (act_dist_calc.act_sim, 5 / 14, ()),
+                    (suc_dist_calc.suc_sim, 5 / 7, ()),
+                    (sim_calc.dist_calc, 5 / 8, (1 / 4,)),
+                ):
+                    with self.subTest(
+                        first_log_size=len(first), single=single,
+                        helper=helper.__module__,
+                    ):
+                        result = helper(
+                            *arguments, *extra, parameters={"single": single}
+                        )
+                        self.assertAlmostEqual(result, expected)
+
     def test_log_slice_and_evaluation_distances(self):
         log1, log2 = self._logs()
         self.assertEqual(len(log1), len(logslice_dist.log2sublog(log1, "one")))
