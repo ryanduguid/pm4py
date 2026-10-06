@@ -150,7 +150,8 @@ class ScipySolverIntegralityTest(unittest.TestCase):
                     equation.get_activated_transitions(points), ["A"] * expected_count
                 )
 
-    def test_marking_equations_preserve_other_backend_conversion(self):
+    @staticmethod
+    def _marking_equations():
         from pm4py.algo.analysis.marking_equation.variants import classic
         from pm4py.algo.analysis.extended_marking_equation.variants import (
             classic as extended,
@@ -166,6 +167,10 @@ class ScipySolverIntegralityTest(unittest.TestCase):
         extended_equation.y = []
         extended_equation.c1 = equation.c
         components = (equation.c, None, None, np.eye(2), [0.6, 0.4])
+        return equation, extended_equation, components
+
+    def test_marking_equations_preserve_other_backend_conversion(self):
+        equation, extended_equation, components = self._marking_equations()
         with (
             mock.patch.object(solver, "DEFAULT_LP_SOLVER_VARIANT", solver.PULP),
             mock.patch.object(solver, "apply"),
@@ -176,21 +181,7 @@ class ScipySolverIntegralityTest(unittest.TestCase):
             self.assertEqual(extended_equation.solve(variant=solver.PULP), (6, [1]))
 
     def test_marking_equations_reject_unsuccessful_partial_results(self):
-        from pm4py.algo.analysis.marking_equation.variants import classic
-        from pm4py.algo.analysis.extended_marking_equation.variants import (
-            classic as extended,
-        )
-
-        equation = classic.MarkingEquationSolver.__new__(classic.MarkingEquationSolver)
-        equation.c = [10, 1]
-        extended_equation = extended.ExtendedMarkingEquationSolver.__new__(
-            extended.ExtendedMarkingEquationSolver
-        )
-        extended_equation.sync_net = SimpleNamespace(transitions=["A"])
-        extended_equation.x = [[0], [1]]
-        extended_equation.y = []
-        extended_equation.c1 = equation.c
-        components = (equation.c, None, None, np.eye(2), [0.6, 0.4])
+        equation, extended_equation, components = self._marking_equations()
         result = OptimizeResult(success=False, x=np.array([0.6, 0.4]), fun=6.4)
         with (
             mock.patch.object(solver, "DEFAULT_LP_SOLVER_VARIANT", solver.SCIPY),
