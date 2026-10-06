@@ -1,7 +1,5 @@
 import importlib.util
-import json
-import os
-import subprocess
+import multiprocessing
 import sys
 import unittest
 from unittest import mock
@@ -16,35 +14,48 @@ CASES = {
     "seeded_integer_15": ([1, 4, 5], [[1, -2, 1], [3, 3, -2], [1, 0, 3], [-1, 2, 0], [-2, 0, 2]], [-3, 3.25, 9, 7, 6], 27.0),
 }
 
-CHILD = r"""
-import json, sys
-from cvxopt import matrix
-from pm4py.util.lp.variants import cvxopt_solver_custom_align_ilp as ilp
-c, rows, rhs = json.loads(sys.argv[1])
-for i in range(len(c)):
-    rows += [[-1.0 if j == i else 0.0 for j in range(len(c))], [1.0 if j == i else 0.0 for j in range(len(c))]]
-    rhs += [0.0, 4.0]
-G = matrix([[float(r[j]) for r in rows] for j in range(len(c))])
-sol = ilp.custom_solve_ilp(matrix([float(v) for v in c]), G, matrix([float(v) for v in rhs]),
-                           matrix(0.0, (0, len(c))), matrix(0.0, (0, 1)), set(range(len(c))))
-print(json.dumps({"status": sol["status"], "x": list(sol["x"]) if sol["x"] is not None else None,
-                  "obj": sol["primal objective"]}))
-"""
+def _solve_case(connection, c, source_rows, source_rhs):
+    from cvxopt import matrix
+    from pm4py.util.lp.variants import cvxopt_solver_custom_align_ilp as ilp
+
+    rows, rhs = list(source_rows), list(source_rhs)
+    for i in range(len(c)):
+        rows += [[-1.0 if j == i else 0.0 for j in range(len(c))],
+                 [1.0 if j == i else 0.0 for j in range(len(c))]]
+        rhs += [0.0, 4.0]
+    G = matrix([[float(r[j]) for r in rows] for j in range(len(c))])
+    sol = ilp.custom_solve_ilp(matrix([float(v) for v in c]), G,
+                             matrix([float(v) for v in rhs]), matrix(0.0, (0, len(c))),
+                             matrix(0.0, (0, 1)), set(range(len(c))))
+    connection.send({"status": sol["status"],
+                     "x": list(sol["x"]) if sol["x"] is not None else None,
+                     "obj": sol["primal objective"]})
+    connection.close()
 
 
 @unittest.skipUnless(HAS_CVXOPT, "cvxopt is not installed")
 class CvxoptGlpkGuardTest(unittest.TestCase):
     def test_zero_column_presolve_cases_do_not_abort(self):
-        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        context = multiprocessing.get_context("spawn")
         for name, (c, rows, rhs, expected) in CASES.items():
             with self.subTest(case=name):
                 # A child process, because the unguarded failure is SIGABRT.
-                proc = subprocess.run(
-                    [sys.executable, "-c", CHILD, json.dumps([c, rows, rhs])],
-                    capture_output=True, text=True, cwd=root, timeout=120,
-                )
-                self.assertEqual(proc.returncode, 0, proc.stderr)
-                out = json.loads(proc.stdout.strip().splitlines()[-1])
+                receive, send = context.Pipe(duplex=False)
+                proc = context.Process(target=_solve_case, args=(send, c, rows, rhs))
+                try:
+                    proc.start()
+                    send.close()
+                    proc.join(timeout=120)
+                    self.assertFalse(proc.is_alive(), "integer solve timed out")
+                    self.assertEqual(proc.exitcode, 0, "integer solve crashed")
+                    self.assertTrue(receive.poll(), "integer solve returned no result")
+                    out = receive.recv()
+                finally:
+                    if proc.is_alive():
+                        proc.terminate()
+                        proc.join()
+                    receive.close()
+                    send.close()
                 self.assertEqual(out["status"], "optimal")
                 x = out["x"]
                 self.assertTrue(all(abs(v - round(v)) <= 1e-9 and 0 <= v <= 4 for v in x))
