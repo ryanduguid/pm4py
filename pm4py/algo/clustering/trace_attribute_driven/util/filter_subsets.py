@@ -337,11 +337,8 @@ def sublog2df(log, freq_thres, num):
     df = pandas_utils.instantiate_dataframe_from_dict(variants_count)
     df_w_count_1 = df[df["count"] >= freq_thres]
     df_w_count_2 = df.iloc[0:num, :]
-    # take union of two dataframes
-    df_w_count = pandas_utils.merge(
-        df_w_count_1, df_w_count_2, how="outer", on=["variant", "count"]
-    )
-    # display(df_w_count['variant'])
+    # Both selections are prefixes; preserve their frequency order.
+    df_w_count = df.iloc[: max(len(df_w_count_1), len(df_w_count_2)), :]
     return df_w_count
 
 
