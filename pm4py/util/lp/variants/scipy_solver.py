@@ -84,16 +84,20 @@ def apply(
 
 
 def get_prim_obj_from_sol(
-        sol: OptimizeResult, parameters: Optional[Dict[Any, Any]] = None
-) -> Optional[int]:
-    if sol is not None and sol.fun is not None:
-        return round(sol.fun)
-    return None
+        sol: Optional[OptimizeResult], parameters: Optional[Dict[Any, Any]] = None
+) -> Optional[float]:
+    """Return the successful objective without rounding, or None."""
+    if sol is None or not getattr(sol, "success", False):
+        return None
+    objective = getattr(sol, "fun", None)
+    return float(objective) if objective is not None else None
 
 
 def get_points_from_sol(
-        sol: OptimizeResult, parameters: Optional[Dict[Any, Any]] = None
-) -> Optional[List[int]]:
-    if sol is not None and sol.x is not None:
-        return [round(y) for y in sol.x]
-    return None
+        sol: Optional[OptimizeResult], parameters: Optional[Dict[Any, Any]] = None
+) -> Optional[List[float]]:
+    """Return a copy of the successful points without rounding, or None."""
+    if sol is None or not getattr(sol, "success", False):
+        return None
+    points = getattr(sol, "x", None)
+    return [float(y) for y in points] if points is not None else None
