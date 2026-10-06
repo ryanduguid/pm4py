@@ -337,11 +337,8 @@ def sublog2df(log, freq_thres, num):
     df = pandas_utils.instantiate_dataframe_from_dict(variants_count)
     df_w_count_1 = df[df["count"] >= freq_thres]
     df_w_count_2 = df.iloc[0:num, :]
-    # take union of two dataframes
-    df_w_count = pandas_utils.merge(
-        df_w_count_1, df_w_count_2, how="outer", on=["variant", "count"]
-    )
-    # display(df_w_count['variant'])
+    # Both selections are prefixes; preserve their frequency order.
+    df_w_count = df.iloc[: max(len(df_w_count_1), len(df_w_count_2)), :]
     return df_w_count
 
 
@@ -362,15 +359,15 @@ def act_dist(var_list_1, var_list_2, log1, log2, freq_thres):
         min_len = len(var_list_2)
         max_var = var_list_1
         min_var = var_list_2
-        var_count_max = sublog2df(log1, freq_thres)["count"]
-        var_count_min = sublog2df(log2, freq_thres)["count"]
+        var_count_max = sublog2df(log1, freq_thres, len(var_list_1))["count"]
+        var_count_min = sublog2df(log2, freq_thres, len(var_list_2))["count"]
     else:
         max_len = len(var_list_2)
         min_len = len(var_list_1)
         max_var = var_list_2
         min_var = var_list_1
-        var_count_max = sublog2df(log2, freq_thres)["count"]
-        var_count_min = sublog2df(log1, freq_thres)["count"]
+        var_count_max = sublog2df(log2, freq_thres, len(var_list_2))["count"]
+        var_count_min = sublog2df(log1, freq_thres, len(var_list_1))["count"]
 
     dist_matrix = np.zeros((max_len, min_len))
 
