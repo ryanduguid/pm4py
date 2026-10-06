@@ -36,7 +36,7 @@ enabled_tests = [
     "ImpExpFromString", "WoflanTest", "OcelFilteringTest", "OcelDiscoveryTest", "LlmTest",
     "OcCausalNetSemanticsTest", "OcCausalNetSimulationTest", "OcCausalNetTest",
     "OcpnSemanticsTest", "OcpnSimulationTest", "OcpnTest", "LocalProcessModelsTest",
-    "AdditionalCoverageTest", "ApproxAlignmentTest", "TestGeneticMiner",
+    "AdditionalCoverageTest", "ApproxAlignmentTest", "ScipySolverIntegralityTest", "TestGeneticMiner",
     "Ocel2CsvTest", "Ocel2GzipTest", "OcelOlapTest", "SimulationTest",
     "TraceEncodingsTest", "SplitMinerInternalsTest", "ExtendedCoverageTest",
     "CoverageRegressionTest", "ModelUtilitiesCoverageTest",
@@ -476,6 +476,14 @@ if "ApproxAlignmentTest" in enabled_tests:
         suite.addTests(loader.loadTestsFromTestCase(ApproxAlignmentTest))
     except Exception:
         print("ApproxAlignmentTest import failed!")
+        failed += 1
+
+if "ScipySolverIntegralityTest" in enabled_tests:
+    try:
+        from tests.scipy_solver_integrality_test import ScipySolverIntegralityTest
+        suite.addTests(loader.loadTestsFromTestCase(ScipySolverIntegralityTest))
+    except Exception:
+        print("ScipySolverIntegralityTest import failed!")
         failed += 1
 
 if "TestGeneticMiner" in enabled_tests:

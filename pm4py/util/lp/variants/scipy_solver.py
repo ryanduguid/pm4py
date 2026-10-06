@@ -53,8 +53,20 @@ def apply(
     integrality = exec_utils.get_param_value(
         Parameters.INTEGRALITY, parameters, None
     )
-    method = exec_utils.get_param_value(Parameters.METHOD, parameters, "revised simplex")
+    has_integrality = bool(np.any(integrality))
+    method = exec_utils.get_param_value(
+        Parameters.METHOD, parameters,
+        "highs" if has_integrality else "revised simplex",
+    )
     bounds = exec_utils.get_param_value(Parameters.BOUNDS, parameters, None)
+
+    if has_integrality and (
+        not isinstance(method, str) or method.lower() != "highs"
+    ):
+        raise ValueError(
+            "Nonzero integrality requires method='highs'; remove or zero "
+            "integrality to request a continuous relaxation."
+        )
 
     with LP_LOCK:
         sol = linprog(

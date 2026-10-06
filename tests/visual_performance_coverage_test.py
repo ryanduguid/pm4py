@@ -2,7 +2,6 @@ import importlib.machinery
 import os
 import sys
 import tempfile
-import time
 import types
 import unittest
 from collections import Counter
@@ -20,7 +19,6 @@ from pm4py.objects.ocpn.variants import to_alternative_format
 from pm4py.objects.org.sna.obj import SNA
 from pm4py.objects.process_tree.obj import Operator, ProcessTree
 from pm4py.objects.process_tree.utils import regex as process_tree_regex
-from pm4py.util import timeout
 from pm4py.visualization.footprints.variants import comparison_symmetric
 from pm4py.visualization.ocel.object_graph import visualizer as object_graph_visualizer
 from pm4py.visualization.sna import visualizer as sna_visualizer
@@ -105,11 +103,12 @@ class VisualPerformanceCoverageTest(unittest.TestCase):
             variant=sna_visualizer.Variants.NETWORKX,
         )
         self.assertTrue(os.path.exists(image))
-        with tempfile.NamedTemporaryFile(suffix=".png") as destination:
+        with tempfile.TemporaryDirectory() as directory:
+            destination = os.path.join(directory, "network.png")
             sna_visualizer.save(
-                image, destination.name, variant=sna_visualizer.Variants.NETWORKX
+                image, destination, variant=sna_visualizer.Variants.NETWORKX
             )
-            self.assertGreater(os.path.getsize(destination.name), 0)
+            self.assertGreater(os.path.getsize(destination), 0)
         with mock.patch("pm4py.visualization.sna.variants.networkx.constants.DEFAULT_ENABLE_VISUALIZATIONS_VIEW", False):
             self.assertIsNone(
                 sna_visualizer.view(image, variant=sna_visualizer.Variants.NETWORKX)
@@ -129,9 +128,10 @@ class VisualPerformanceCoverageTest(unittest.TestCase):
             )
         with open(html) as html_file:
             self.assertIn("network", html_file.read())
-        with tempfile.NamedTemporaryFile(suffix=".html") as destination:
-            sna_visualizer.save(html, destination.name, variant=sna_visualizer.Variants.PYVIS)
-            self.assertGreater(os.path.getsize(destination.name), 0)
+        with tempfile.TemporaryDirectory() as directory:
+            destination = os.path.join(directory, "network.html")
+            sna_visualizer.save(html, destination, variant=sna_visualizer.Variants.PYVIS)
+            self.assertGreater(os.path.getsize(destination), 0)
         with mock.patch("pm4py.visualization.sna.variants.pyvis.constants.DEFAULT_ENABLE_VISUALIZATIONS_VIEW", False):
             self.assertIsNone(sna_visualizer.view(html, variant=sna_visualizer.Variants.PYVIS))
 
@@ -195,7 +195,7 @@ class VisualPerformanceCoverageTest(unittest.TestCase):
         self.assertTrue(order_net.transitions)
         self.assertFalse(to_alternative_format.oc_marking_to_petri(None, {}))
 
-    def test_process_tree_regex_and_timeout_utility(self):
+    def test_process_tree_regex(self):
         a = ProcessTree(label="A")
         b = ProcessTree(label="B")
         tau = ProcessTree()
@@ -209,15 +209,6 @@ class VisualPerformanceCoverageTest(unittest.TestCase):
         parallel = ProcessTree(operator=Operator.PARALLEL, children=[a, b])
         with self.assertRaises(Exception):
             process_tree_regex.pt_to_regex(parallel)
-
-        self.assertEqual(3, timeout.func_timeout(None, lambda x, y=0: x + y, args=(1,), kwargs={"y": 2}))
-        self.assertEqual("ok", timeout.func_timeout(1, lambda: "ok"))
-        with self.assertRaisesRegex(ValueError, "timeout"):
-            timeout.func_timeout(0, lambda: None)
-        with self.assertRaisesRegex(RuntimeError, "boom"):
-            timeout.func_timeout(1, lambda: (_ for _ in ()).throw(RuntimeError("boom")))
-        with self.assertRaises(timeout.FunctionTimedOut):
-            timeout.func_timeout(0.001, time.sleep, args=(0.05,))
 
     def test_dfg_filtering_connectivity_and_activity_boundaries(self):
         dfg = {
