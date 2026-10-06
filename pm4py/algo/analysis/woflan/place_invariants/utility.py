@@ -177,6 +177,8 @@ def transform_basis(basis, style=None):
             val = solver.get_prim_obj_from_sol(sol, variant=proposed_solver)
 
             if points is not None:
+                if proposed_solver == solver.SCIPY:
+                    points = [round(y) for y in points]
                 new_vector = np.zeros(len(vector), dtype=np.float64)
 
                 if style == "weighted":
