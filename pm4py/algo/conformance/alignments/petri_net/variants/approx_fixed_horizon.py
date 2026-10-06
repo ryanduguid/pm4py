@@ -435,6 +435,8 @@ def _integer_tail_cost(
     )
     if points is None:
         return None
+    if lp_solver.DEFAULT_LP_SOLVER_VARIANT == lp_solver.SCIPY:
+        points = [round(value) for value in points]
     return int(round(sum(value * coefficient for value, coefficient in zip(points, c))))
 
 

@@ -36,7 +36,7 @@ enabled_tests = [
     "ImpExpFromString", "WoflanTest", "OcelFilteringTest", "OcelDiscoveryTest", "LlmTest",
     "OcCausalNetSemanticsTest", "OcCausalNetSimulationTest", "OcCausalNetTest",
     "OcpnSemanticsTest", "OcpnSimulationTest", "OcpnTest", "LocalProcessModelsTest",
-    "AdditionalCoverageTest", "ApproxAlignmentTest", "ScipySolverIntegralityTest", "TestGeneticMiner",
+    "AdditionalCoverageTest", "ApproxAlignmentTest", "ScipySolverIntegralityTest", "CvxoptGlpkGuardTest", "TestGeneticMiner",
     "Ocel2CsvTest", "Ocel2GzipTest", "OcelOlapTest", "SimulationTest",
     "TraceEncodingsTest", "SplitMinerInternalsTest", "ExtendedCoverageTest",
     "CoverageRegressionTest", "ModelUtilitiesCoverageTest",
@@ -484,6 +484,14 @@ if "ScipySolverIntegralityTest" in enabled_tests:
         suite.addTests(loader.loadTestsFromTestCase(ScipySolverIntegralityTest))
     except Exception:
         print("ScipySolverIntegralityTest import failed!")
+        failed += 1
+
+if "CvxoptGlpkGuardTest" in enabled_tests:
+    try:
+        from tests.cvxopt_glpk_guard_test import CvxoptGlpkGuardTest
+        suite.addTests(loader.loadTestsFromTestCase(CvxoptGlpkGuardTest))
+    except Exception:
+        print("CvxoptGlpkGuardTest import failed!")
         failed += 1
 
 if "TestGeneticMiner" in enabled_tests:

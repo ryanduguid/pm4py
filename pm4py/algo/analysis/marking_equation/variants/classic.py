@@ -308,7 +308,12 @@ class MarkingEquationSolver(object):
             sol, variant=solver.DEFAULT_LP_SOLVER_VARIANT
         )
         if sol_points is not None:
-            x = self.get_x_vector(sol_points)
+            x_points = (
+                [round(y) for y in sol_points]
+                if solver.DEFAULT_LP_SOLVER_VARIANT == solver.SCIPY
+                else sol_points
+            )
+            x = self.get_x_vector(x_points)
             x = [int(y) for y in x]
             h = self.get_h(sol_points)
             return h, x
