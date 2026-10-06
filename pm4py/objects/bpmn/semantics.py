@@ -45,7 +45,7 @@ def execute(node, bpmn, m):
     if not is_enabled(node, bpmn, m):
         return None
 
-    return weak_execute(node, m)
+    return weak_execute(node, m, bpmn)
 
 
 def try_to_execute(node, bpmn, m):
