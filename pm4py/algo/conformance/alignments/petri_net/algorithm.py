@@ -467,7 +467,7 @@ def apply_multiprocessing(
         Parameters.ACTIVITY_KEY, parameters, xes_constants.DEFAULT_NAME_KEY
     )
     timestamp_key = exec_utils.get_param_value(
-        Parameters.TIMESTAMP_KEY, parameters, constants.DEFAULT_TIMESTAMP_KEY
+        Parameters.TIMESTAMP_KEY, parameters, xes_constants.DEFAULT_TIMESTAMP_KEY
     )
 
 
