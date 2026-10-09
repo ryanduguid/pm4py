@@ -1,4 +1,5 @@
 import unittest
+from copy import deepcopy
 from unittest import mock
 
 import pm4py
@@ -363,6 +364,92 @@ class PowlTreeGenerationDeepCoverageTest(unittest.TestCase):
         petri_utils.add_arc_from_to(transition, place, invalid)
         with self.assertRaises(Exception):
             wf_to_powl.validate_workflow_net(invalid)
+
+    def test_wf_to_powl_rejects_parallel_branches_merging_into_one_place(self):
+        # Issue #570: the branches each produce a token in the shared place.
+        # Check both a shared sink and an internal merge, with visible/silent splits.
+        for internal_merge in (False, True):
+            for split_label in ("S", None):
+                with self.subTest(internal_merge=internal_merge, split_label=split_label):
+                    source, left, right, merge = (
+                        PetriNet.Place(name) for name in ("source", "left", "right", "merge")
+                    )
+                    split = PetriNet.Transition("split", split_label)
+                    a, b = PetriNet.Transition("a", "A"), PetriNet.Transition("b", "B")
+                    places = {source, left, right, merge}
+                    transitions = {split, a, b}
+                    arcs = [
+                        (source, split), (split, left), (split, right),
+                        (left, a), (right, b), (a, merge), (b, merge),
+                    ]
+                    sink = merge
+                    if internal_merge:
+                        sink = PetriNet.Place("sink")
+                        end = PetriNet.Transition("end", "E")
+                        places.add(sink)
+                        transitions.add(end)
+                        arcs.extend([(merge, end), (end, sink)])
+                    net = self._net("unsynchronized merge", places, transitions, arcs)
+                    initial, final = Marking({source: 1}), Marking({sink: 1})
+
+                    with self.assertRaisesRegex(ValueError, "multiple producer groups"):
+                        wf_to_powl.apply(deepcopy(net))
+                    with self.assertRaisesRegex(ValueError, "multiple producer groups"):
+                        pm4py.convert_to_powl(*deepcopy((net, initial, final)))
+                    self.assertFalse(pm4py.analysis.check_is_sound(net, initial, final))
+
+    def test_wf_to_powl_rejects_choice_branches_with_parallel_join(self):
+        source, left, right, sink = (
+            PetriNet.Place(name) for name in ("source", "left", "right", "sink")
+        )
+        a, b, join = (PetriNet.Transition(name, name) for name in ("a", "b", "join"))
+        net = self._net(
+            "deadlocking join", {source, left, right, sink}, {a, b, join},
+            [(source, a), (source, b), (a, left), (b, right),
+             (left, join), (right, join), (join, sink)],
+        )
+        initial, final = Marking({source: 1}), Marking({sink: 1})
+        with self.assertRaises(Exception):
+            pm4py.convert_to_powl(*deepcopy((net, initial, final)))
+        self.assertFalse(pm4py.analysis.check_is_sound(net, initial, final))
+
+    def test_wf_to_powl_keeps_soundness_fast_path_for_sound_patterns(self):
+        patterns = (
+            "X('A','B')",
+            "+('A','B')",
+            "->('S',+('A','B'),'E')",
+            "->('S',X('A','B'),'E')",
+            "->('S',*('A','B'),'E')",
+            "->('S',+(*('A','B'),X('C','D')),'E')",
+        )
+        for text in patterns:
+            with self.subTest(pattern=text):
+                tree = pm4py.parse_process_tree(text)
+                net, initial, final = pm4py.convert_to_petri_net(tree)
+                model = pm4py.convert_to_powl(*deepcopy((net, initial, final)))
+                model.validate_partial_orders()
+                with mock.patch("pm4py.algo.analysis.woflan.algorithm.apply") as fallback:
+                    self.assertTrue(pm4py.analysis.check_is_sound(net, initial, final))
+                    fallback.assert_not_called()
+
+    def test_wf_to_powl_accepts_loop_at_a_shared_boundary(self):
+        source, boundary, sink = (
+            PetriNet.Place(name) for name in ("source", "boundary", "sink")
+        )
+        start, repeat, end = (
+            PetriNet.Transition(name, name) for name in ("start", "repeat", "end")
+        )
+        net = self._net(
+            "boundary loop", {source, boundary, sink}, {start, repeat, end},
+            [(source, start), (start, boundary), (boundary, repeat),
+             (repeat, boundary), (boundary, end), (end, sink)],
+        )
+        initial, final = Marking({source: 1}), Marking({sink: 1})
+        model = pm4py.convert_to_powl(*deepcopy((net, initial, final)))
+        model.validate_partial_orders()
+        with mock.patch("pm4py.algo.analysis.woflan.algorithm.apply") as fallback:
+            self.assertTrue(pm4py.analysis.check_is_sound(net, initial, final))
+            fallback.assert_not_called()
 
     def test_process_tree_to_petri_net_helpers_and_duplicate_cleanup(self):
         counts = to_petri_net.Counts()

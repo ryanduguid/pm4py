@@ -404,6 +404,7 @@ def __approximate_alignment_on_loop(
         parameters = {}
 
     from pulp import lpSum, LpVariable, LpProblem, LpMinimize
+    from pm4py.util.lp.variants import pulp_solver
 
     activity_key = exec_utils.get_param_value(
         Parameters.ACTIVITY_KEY, parameters, DEFAULT_NAME_KEY
@@ -414,6 +415,7 @@ def __approximate_alignment_on_loop(
     assert len(trace) > 0
 
     ilp = LpProblem(sense=LpMinimize)
+    add_variable = getattr(ilp, "add_variable", LpVariable)
 
     # x_i_j = 1 <=> assigns activity i to subtree j
     x_variables = {}
@@ -458,29 +460,29 @@ def __approximate_alignment_on_loop(
         p_variables[i] = {}
         n_variables[i] = {}
         for j, subtree in enumerate(pt.children):
-            x_variables[i][j] = LpVariable(
+            x_variables[i][j] = add_variable(
                 "x_" + str(i) + "_" + str(j), cat="Binary"
             )
 
-            s_variables[i][j] = LpVariable(
+            s_variables[i][j] = add_variable(
                 "s_" + str(i) + "_" + str(j), cat="Binary"
             )
             s_costs[i][j] = 0 if a[activity_key] in sa_sets[subtree] else 1
 
-            e_variables[i][j] = LpVariable(
+            e_variables[i][j] = add_variable(
                 "e_" + str(i) + "_" + str(j), cat="Binary"
             )
             e_costs[i][j] = 0 if a[activity_key] in ea_sets[subtree] else 1
 
-            v_variables[i][j] = LpVariable(
+            v_variables[i][j] = add_variable(
                 "v_" + str(i) + "_" + str(j), cat="Binary"
             )
             v_costs[i][j] = 0 if a[activity_key] in a_sets[subtree] else 1
 
-            p_variables[i][j] = LpVariable(
+            p_variables[i][j] = add_variable(
                 "p_" + str(i) + "_" + str(j), cat="Binary"
             )
-            n_variables[i][j] = LpVariable(
+            n_variables[i][j] = add_variable(
                 "n_" + str(i) + "_" + str(j), cat="Binary"
             )
 
@@ -488,7 +490,7 @@ def __approximate_alignment_on_loop(
         t_variables[i] = {}
         t_costs[i] = {}
         for j, subtree in enumerate(pt.children):
-            t_variables[i][j] = LpVariable(
+            t_variables[i][j] = add_variable(
                 "t_" + str(i) + "_" + str(j), cat="Binary"
             )
             if tau_flags[subtree]:
@@ -662,8 +664,8 @@ def __approximate_alignment_on_loop(
             ilp += v_variables[i][j] <= 1 - e_variables[i][j]
             ilp += v_variables[i][j] <= 1 - s_variables[i][j]
 
-    status = ilp.solve()
-    assert status == 1
+    status = pulp_solver.solver(ilp)
+    assert getattr(status, "status", status) == 1
 
     alignments_to_calculate = []
     sub_trace = Trace()
@@ -735,6 +737,7 @@ def __approximate_alignment_on_sequence(
         parameters = {}
 
     from pulp import lpSum, LpVariable, LpProblem, LpMinimize
+    from pm4py.util.lp.variants import pulp_solver
 
     activity_key = exec_utils.get_param_value(
         Parameters.ACTIVITY_KEY, parameters, DEFAULT_NAME_KEY
@@ -745,6 +748,7 @@ def __approximate_alignment_on_sequence(
     assert len(trace) > 0
 
     ilp = LpProblem(sense=LpMinimize)
+    add_variable = getattr(ilp, "add_variable", LpVariable)
 
     # x_i_j = 1 <=> assigns activity i to subtree j
     x_variables = {}
@@ -780,27 +784,27 @@ def __approximate_alignment_on_sequence(
         v_costs[i] = {}
 
         for j, subtree in enumerate(pt.children):
-            x_variables[i][j] = LpVariable(
+            x_variables[i][j] = add_variable(
                 "x_" + str(i) + "_" + str(j), cat="Binary"
             )
 
-            s_variables[i][j] = LpVariable(
+            s_variables[i][j] = add_variable(
                 "s_" + str(i) + "_" + str(j), cat="Binary"
             )
             s_costs[i][j] = 0 if a[activity_key] in sa_sets[subtree] else 1
 
-            e_variables[i][j] = LpVariable(
+            e_variables[i][j] = add_variable(
                 "e_" + str(i) + "_" + str(j), cat="Binary"
             )
             e_costs[i][j] = 0 if a[activity_key] in ea_sets[subtree] else 1
 
-            v_variables[i][j] = LpVariable(
+            v_variables[i][j] = add_variable(
                 "v_" + str(i) + "_" + str(j), cat="Binary"
             )
             v_costs[i][j] = 0 if a[activity_key] in a_sets[subtree] else 1
 
     for j in range(len(pt.children)):
-        u_variables[j] = LpVariable("u_" + str(j), cat="Binary")
+        u_variables[j] = add_variable("u_" + str(j), cat="Binary")
         # define costs to not assign anything to subtree j
         if tau_flags[pt.children[j]]:
             u_costs[j] = 0
@@ -917,8 +921,8 @@ def __approximate_alignment_on_sequence(
             ilp += v_variables[i][j] <= 1 - e_variables[i][j]
             ilp += v_variables[i][j] <= 1 - s_variables[i][j]
 
-    status = ilp.solve()
-    assert status == 1
+    status = pulp_solver.solver(ilp)
+    assert getattr(status, "status", status) == 1
 
     alignments_to_calculate = []
     for j in range(len(pt.children)):
@@ -963,6 +967,7 @@ def __approximate_alignment_on_parallel(
         parameters = {}
 
     from pulp import lpSum, LpVariable, LpProblem, LpMinimize
+    from pm4py.util.lp.variants import pulp_solver
 
     activity_key = exec_utils.get_param_value(
         Parameters.ACTIVITY_KEY, parameters, DEFAULT_NAME_KEY
@@ -973,6 +978,7 @@ def __approximate_alignment_on_parallel(
     assert len(trace) > 0
 
     ilp = LpProblem(sense=LpMinimize)
+    add_variable = getattr(ilp, "add_variable", LpVariable)
 
     # x_i_j = 1 <=> assigns activity i to subtree j
     x_variables = {}
@@ -1007,27 +1013,27 @@ def __approximate_alignment_on_parallel(
         v_costs[i] = {}
 
         for j, subtree in enumerate(pt.children):
-            x_variables[i][j] = LpVariable(
+            x_variables[i][j] = add_variable(
                 "x_" + str(i) + "_" + str(j), cat="Binary"
             )
 
-            s_variables[i][j] = LpVariable(
+            s_variables[i][j] = add_variable(
                 "s_" + str(i) + "_" + str(j), cat="Binary"
             )
             s_costs[i][j] = 0 if a[activity_key] in sa_sets[subtree] else 1
 
-            e_variables[i][j] = LpVariable(
+            e_variables[i][j] = add_variable(
                 "e_" + str(i) + "_" + str(j), cat="Binary"
             )
             e_costs[i][j] = 0 if a[activity_key] in ea_sets[subtree] else 1
 
-            v_variables[i][j] = LpVariable(
+            v_variables[i][j] = add_variable(
                 "v_" + str(i) + "_" + str(j), cat="Binary"
             )
             v_costs[i][j] = 0 if a[activity_key] in a_sets[subtree] else 1
 
     for j in range(len(pt.children)):
-        u_variables[j] = LpVariable("u_" + str(j), cat="Binary")
+        u_variables[j] = add_variable("u_" + str(j), cat="Binary")
         # define costs to not assign anything to subtree j
         if tau_flags[pt.children[j]]:
             u_costs[j] = 0
@@ -1125,8 +1131,8 @@ def __approximate_alignment_on_parallel(
             ilp += v_variables[i][j] <= 1 - e_variables[i][j]
             ilp += v_variables[i][j] <= 1 - s_variables[i][j]
 
-    status = ilp.solve()
-    assert status == 1
+    status = pulp_solver.solver(ilp)
+    assert getattr(status, "status", status) == 1
 
     # trace_parts list contains trace parts mapped onto the determined subtree
     trace_parts = []

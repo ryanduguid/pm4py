@@ -50,7 +50,7 @@ enabled_tests = [
     "SerializationLogUtilsCoverageTest", "PetriStochasticSerializationCoverageTest",
     "PowlTreeGenerationDeepCoverageTest",
     "RemainingAlgorithmsCoverageTest", "IoFilteringEdgeCoverageTest",
-    "FinalBufferCoverageTest"
+    "FinalBufferCoverageTest", "LpSolverTest"
 ]
 
 if importlib.util.find_spec("polars"):
@@ -468,6 +468,14 @@ if "AdditionalCoverageTest" in enabled_tests:
         suite.addTests(loader.loadTestsFromTestCase(AdditionalCoverageTest))
     except Exception:
         print("AdditionalCoverageTest import failed!")
+        failed += 1
+
+if "LpSolverTest" in enabled_tests:
+    try:
+        from tests.lp_solver_test import LpSolverTest
+        suite.addTests(loader.loadTestsFromTestCase(LpSolverTest))
+    except Exception:
+        print("LpSolverTest import failed!")
         failed += 1
 
 if "ApproxAlignmentTest" in enabled_tests:

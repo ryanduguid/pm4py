@@ -600,6 +600,16 @@ def __translate_partial_order(net, transition_groups, i_place: PetriNet.Place, f
     for p in net.places:
         sources = {arc.source for arc in p.in_arcs}
         targets = {arc.target for arc in p.out_arcs}
+        source_groups = {transition_to_group_map[t] for t in sources}
+        target_groups = {transition_to_group_map[t] for t in targets}
+
+        # A shared place cannot merge tokens from independent POWL children or
+        # let them compete for one token. Groups on both sides may loop locally;
+        # only the external producers and consumers must be unique.
+        if len(source_groups - target_groups) > 1:
+            raise ValueError(f"Invalid partial order: place {p} has multiple producer groups!")
+        if len(target_groups - source_groups) > 1:
+            raise ValueError(f"Invalid partial order: place {p} has multiple consumer groups!")
 
         if p == i_place:
             for t in targets:

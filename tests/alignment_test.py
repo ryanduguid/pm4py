@@ -1,11 +1,13 @@
 import os
 import unittest
+from datetime import datetime, timedelta, timezone
 
 from pm4py.algo.conformance.alignments.petri_net import algorithm as align_alg
 from pm4py.algo.discovery.alpha import algorithm as alpha_alg
 from pm4py.algo.discovery.inductive import algorithm as inductive_miner
 from pm4py.objects import petri_net
 from pm4py.objects.log.importer.xes import importer as xes_importer
+from pm4py.objects.log.obj import Event, EventLog, Trace
 from pm4py.objects.process_tree.obj import Operator as ProcessTreeOperator, ProcessTree
 from tests.constants import INPUT_DATA_DIR
 from pm4py.objects.conversion.process_tree import converter as process_tree_converter
@@ -146,6 +148,51 @@ class AlignmentTest(unittest.TestCase):
 
         self.assertEqual(len(alignments), 10)
         self.assertEqual(sum(map(lambda a: a[1], alignments)), 100)
+
+    def test_multiprocessing_timestamp_keys_and_result_formats(self):
+        import pm4py
+
+        net, im, fm = process_tree_converter.apply(ProcessTree(label="A"))
+        for timestamp_key in ("time:timestamp", "custom_timestamp"):
+            log = EventLog([
+                Trace([
+                    Event({
+                        "concept:name": activity,
+                        timestamp_key: datetime(2024, 1, 1, tzinfo=timezone.utc)
+                        + timedelta(seconds=position),
+                    })
+                    for position, activity in enumerate(activities)
+                ], attributes={"concept:name": str(case_id)})
+                for case_id, activities in enumerate((("A",), ("A", "B"), ("A",)))
+            ])
+            dataframe = pm4py.convert_to_dataframe(log)
+            for obj in (log, dataframe):
+                for unpack_alignments in (True, False):
+                    with self.subTest(
+                        timestamp_key=timestamp_key,
+                        log_type=type(obj).__name__,
+                        unpack_alignments=unpack_alignments,
+                    ):
+                        parameters = {
+                            align_alg.Parameters.CORES: 1,
+                            align_alg.Parameters.SHOW_PROGRESS_BAR: False,
+                            align_alg.Parameters.UNPACK_VARIANT_ALIGNMENTS: unpack_alignments,
+                        }
+                        if timestamp_key != "time:timestamp":
+                            parameters[align_alg.Parameters.TIMESTAMP_KEY] = timestamp_key
+                        results = align_alg.apply_multiprocessing(
+                            obj, net, im, fm,
+                            variant=align_alg.Variants.VERSION_DIJKSTRA_NO_HEURISTICS,
+                            parameters=parameters,
+                        )
+                        if not unpack_alignments:
+                            if obj is dataframe:
+                                self.assertEqual([2, 1], [count for _, count in results])
+                            results = [alignment for alignment, _ in results]
+                        expected_costs = [0, 10000, 0] if unpack_alignments else [0, 10000]
+                        self.assertEqual(expected_costs, [result["cost"] for result in results])
+                        self.assertEqual([("A", "A")], results[0]["alignment"])
+                        self.assertEqual([("A", "A"), ("B", ">>")], results[1]["alignment"])
 
 
 if __name__ == "__main__":
