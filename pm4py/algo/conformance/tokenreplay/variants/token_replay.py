@@ -1510,16 +1510,8 @@ def apply_log(
     for i in range(len(vc)):
         all_cases = vc[i][1]
 
-        if disable_variants and not pandas_utils.check_is_pandas_dataframe(
-            log
-        ):
-            for case_position in all_cases:
-                transcribe_case(case_position, case_runs[case_position])
-        else:
-            for case_position in all_cases:
-                transcribe_case(
-                    case_position, case_runs[case_position]
-                )
+        for case_position in all_cases:
+            transcribe_case(case_position, case_runs[case_position])
 
     for i in range(len(traces)):
         aligned_traces.append(threads_results[i])
