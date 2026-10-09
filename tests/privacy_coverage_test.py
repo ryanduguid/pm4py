@@ -1,6 +1,7 @@
 import copy
 import importlib
 import importlib.machinery
+import random
 import sys
 import types
 import unittest
@@ -10,6 +11,7 @@ from unittest import mock
 import pandas as pd
 
 from pm4py.objects.log.obj import Event, EventLog, Trace
+from pm4py.algo.anonymization.trace_variant_query.variants import sacofa
 
 
 class _IdentityMechanism:
@@ -21,6 +23,54 @@ class _IdentityMechanism:
 
 
 class PrivacyCoverageTest(unittest.TestCase):
+    def test_sacofa_prefix_sampling_ignores_global_random_state(self):
+        self.assertIs(type(sacofa._secure_rng), random.SystemRandom)
+        frequencies = {"A>>>": 7, "B>>>": 5, "C>>>": 3, "D>>>": 1}
+        state = random.getstate()
+        with (
+            mock.patch.object(random, "sample", side_effect=AssertionError("global PRNG used")),
+            mock.patch.object(random.SystemRandom, "_randbelow", return_value=0),
+            mock.patch.object(sacofa.exp, "exp_mech", return_value=2),
+            mock.patch.object(sacofa, "apply_laplace_noise_tf", return_value=frequencies) as noise,
+        ):
+            result, retained = sacofa.privatize_trace_variants(
+                frequencies, 1, {}, {}, ["A", "B", "C", "D"], [["A"]], 1
+            )
+        self.assertIs(result, frequencies)
+        self.assertEqual(["A>>>"], retained)
+        self.assertEqual(["A>>>", "B>>>", "C>>>"], noise.call_args.args[1])
+        self.assertEqual(state, random.getstate())
+
+    def test_sacofa_zero_universe_needs_no_prefix_sample(self):
+        frequencies = {"A>>>": 7, "B>>>": 5}
+        with (
+            mock.patch.object(random.SystemRandom, "sample", side_effect=AssertionError("unexpected sample")),
+            mock.patch.object(sacofa.exp, "exp_mech", return_value=0),
+            mock.patch.object(sacofa, "apply_laplace_noise_tf", return_value=frequencies) as noise,
+        ):
+            result, retained = sacofa.privatize_trace_variants(
+                frequencies, 1, {}, {}, ["A", "B"], [["A"]], 1
+            )
+        self.assertIs(result, frequencies)
+        self.assertEqual(["A>>>"], retained)
+        self.assertEqual(["A>>>"], noise.call_args.args[1])
+
+    def test_sacofa_sampling_preserves_sensitivity_cap(self):
+        frequencies = {"A>>>B>>>": 7, "A>>>C>>>": 5}
+        with (
+            mock.patch.object(random.SystemRandom, "_randbelow", return_value=0),
+            mock.patch.object(sacofa.ba, "getBAViolations", return_value=3),
+            mock.patch.object(sacofa.exp, "exp_mech", return_value=2),
+            mock.patch.object(sacofa, "apply_laplace_noise_tf", return_value=frequencies) as noise,
+        ):
+            result, retained = sacofa.privatize_trace_variants(
+                frequencies, 1, {}, {}, ["A", "B", "C"], [["A"]], 2
+            )
+        self.assertIs(result, frequencies)
+        self.assertEqual([], retained)
+        self.assertEqual(1, len(noise.call_args.args[1]))
+        self.assertIn(noise.call_args.args[1][0], frequencies)
+
     @staticmethod
     def _logs():
         base = datetime(2024, 1, 1, tzinfo=timezone.utc)
