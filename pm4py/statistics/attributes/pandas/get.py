@@ -128,6 +128,8 @@ def get_events_distribution(
         serie = df[timestamp_key].dt.isocalendar().week
         values = Counter(serie.value_counts().to_dict())
         all_values = Counter({i: 0 for i in range(0, 53)})
+    else:
+        raise ValueError(f"Unsupported distribution type: {distr_type!r}")
 
     # make sure that all the possible values appear
     for v in all_values:
