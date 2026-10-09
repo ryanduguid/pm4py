@@ -84,7 +84,7 @@ def reduce_single_entry_transitions(net):
             if t.label is None and len(t.in_arcs) == 1
         ]
         for t in single_entry_transitions:
-            source_place = list(t.in_arcs)[0].source
+            source_place = next(iter(t.in_arcs)).source
             # We check:
             # 1) source_place has exactly 1 input transition
             # 2) source_place is used *only* by 't' (i.e., no other transitions).
@@ -93,7 +93,7 @@ def reduce_single_entry_transitions(net):
                 and _has_only_this_transition_as_output(source_place, t)
             ):
                 # We can merge out 't' and 'source_place'
-                source_transition = list(source_place.in_arcs)[0].source
+                source_transition = next(iter(source_place.in_arcs)).source
                 target_places = [arc.target for arc in t.out_arcs]
 
                 remove_transition(net, t)
@@ -128,7 +128,7 @@ def reduce_single_exit_transitions(net):
             if t.label is None and len(t.out_arcs) == 1
         ]
         for t in single_exit_transitions:
-            target_place = list(t.out_arcs)[0].target
+            target_place = next(iter(t.out_arcs)).target
             # We check:
             # 1) target_place has exactly 1 output transition
             # 2) target_place is used *only* by 't' (i.e., no other transitions).
@@ -136,7 +136,7 @@ def reduce_single_exit_transitions(net):
                 len(target_place.out_arcs) == 1
                 and _has_only_this_transition_as_input(target_place, t)
             ):
-                target_transition = list(target_place.out_arcs)[0].target
+                target_transition = next(iter(target_place.out_arcs)).target
                 source_places = [arc.source for arc in t.in_arcs]
 
                 remove_transition(net, t)
@@ -198,14 +198,14 @@ def apply_fst_rule(net):
             net.places, net.transitions, net.transitions
         ):
             if (
-                (len(list(p.in_arcs)) == 1 and list(p.in_arcs)[0].source == t)
+                (len(list(p.in_arcs)) == 1 and next(iter(p.in_arcs)).source == t)
                 and (
                     len(list(p.out_arcs)) == 1
-                    and list(p.out_arcs)[0].target == u
+                    and next(iter(p.out_arcs)).target == u
                 )
                 and (
                     len(list(u.in_arcs)) == 1
-                    and list(u.in_arcs)[0].source == p
+                    and next(iter(u.in_arcs)).source == p
                 )
                 and (len(post_set(t).intersection(post_set(u))) == 0)
                 and (
@@ -265,12 +265,12 @@ def apply_fsp_rule(net, im=None, fm=None):
                 t.label is None
             ):  # only silent transitions may be removed either way
                 if (
-                    (len(t.in_arcs) == 1 and list(t.in_arcs)[0].source == p)
+                    (len(t.in_arcs) == 1 and next(iter(t.in_arcs)).source == p)
                     and (
                         len(t.out_arcs) == 1
-                        and list(t.out_arcs)[0].target == q
+                        and next(iter(t.out_arcs)).target == q
                     )
-                    and (len(post_set(p)) == 1 and list(post_set(p))[0] == t)
+                    and (len(post_set(p)) == 1 and next(iter(post_set(p))) == t)
                     and (len(pre_set(p).intersection(pre_set(q))) == 0)
                     and (
                         post_set(p, properties.RESET_ARC)
@@ -415,10 +415,10 @@ def apply_elt_rule(net):
             net.places, [t for t in net.transitions if t.label is None]
         ):
             if (
-                (len(list(t.in_arcs)) == 1 and list(t.in_arcs)[0].source == p)
+                (len(list(t.in_arcs)) == 1 and next(iter(t.in_arcs)).source == p)
                 and (
                     len(list(t.out_arcs)) == 1
-                    and list(t.out_arcs)[0].target == p
+                    and next(iter(t.out_arcs)).target == p
                 )
                 and (len(list(p.in_arcs)) >= 2)
                 and (

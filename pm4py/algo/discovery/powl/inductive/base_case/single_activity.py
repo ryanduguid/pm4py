@@ -36,7 +36,7 @@ class SingleActivityBaseCaseUVCL(BaseCase[IMDataStructureUVCL]):
     ) -> bool:
         if len(obj.data_structure.keys()) != 1:
             return False
-        if len(list(obj.data_structure.keys())[0]) > 1:
+        if len(next(iter(obj.data_structure.keys()))) > 1:
             return False
         return True
 

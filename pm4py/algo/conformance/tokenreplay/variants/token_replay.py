@@ -842,7 +842,7 @@ def apply_trace(
         # reached
         if not break_condition_final_marking(marking, final_marking):
             if len(final_marking) == 1:
-                sink_place = list(final_marking)[0]
+                sink_place = next(iter(final_marking))
 
                 connections_to_sink = []
                 for place in marking:
