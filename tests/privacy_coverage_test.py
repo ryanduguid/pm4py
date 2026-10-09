@@ -114,6 +114,64 @@ class PrivacyCoverageTest(unittest.TestCase):
         package.__spec__ = importlib.machinery.ModuleSpec("diffprivlib", loader=None)
         return package, mechanisms
 
+    def test_pripel_enrichment_uses_secure_choices(self):
+        package, mechanisms = self._fake_diffprivlib()
+        with mock.patch.dict(sys.modules, {"diffprivlib": package, "diffprivlib.mechanisms": mechanisms}):
+            module = importlib.import_module("pm4py.algo.anonymization.pripel.util.TraceMatcher")
+            original, query = self._logs()
+            matcher = module.TraceMatcher(query, original)
+            timestamps, fallback = matcher.getTimeStampData()
+            amounts = [4, 4, 9]
+            differences = [timedelta(seconds=10), timedelta(seconds=20)]
+            distribution = {"amount": amounts, "time:timestamp": {"A": {"B": differences}}}
+            previous = {"concept:name": "A", "time:timestamp": timestamps[0]}
+            getter = matcher._TraceMatcher__getNewTimeStamp
+            state = random.getstate()
+            with (
+                mock.patch.object(random, "choice", side_effect=AssertionError("global PRNG used")),
+                mock.patch.object(random.SystemRandom, "_randbelow", return_value=0),
+                mock.patch.object(random.SystemRandom, "choice", wraps=random.SystemRandom().choice) as choice,
+            ):
+                self.assertEqual(timestamps[0], getter(None, {}, 0, distribution))
+                self.assertEqual(
+                    previous["time:timestamp"] + differences[0],
+                    getter(previous, {"concept:name": "B"}, 1, distribution),
+                )
+                self.assertEqual(
+                    previous["time:timestamp"] + fallback[0],
+                    getter(previous, {"concept:name": "C"}, 1, distribution),
+                )
+                unknown = {**previous, "concept:name": "unknown"}
+                self.assertEqual(
+                    previous["time:timestamp"] + fallback[0],
+                    getter(unknown, {"concept:name": "B"}, 1, distribution),
+                )
+                event = matcher._TraceMatcher__createRandomNewEvent(
+                    Event({"concept:name": "B"}), "B", distribution, previous, 1
+                )
+                self.assertEqual(4, event["amount"])
+                self.assertEqual(previous["time:timestamp"] + differences[0], event["time:timestamp"])
+            self.assertIs(type(module._secure_rng), random.SystemRandom)
+            choice.assert_has_calls(
+                [mock.call(timestamps), mock.call(differences), mock.call(fallback),
+                 mock.call(fallback), mock.call(amounts), mock.call(differences)],
+                any_order=True,
+            )
+            self.assertEqual(6, choice.call_count)
+            self.assertEqual(state, random.getstate())
+
+    def test_pripel_empty_timestamp_samples_keep_index_error(self):
+        package, mechanisms = self._fake_diffprivlib()
+        with mock.patch.dict(sys.modules, {"diffprivlib": package, "diffprivlib.mechanisms": mechanisms}):
+            module = importlib.import_module("pm4py.algo.anonymization.pripel.util.TraceMatcher")
+            matcher = module.TraceMatcher(EventLog(), EventLog())
+            getter = matcher._TraceMatcher__getNewTimeStamp
+            with self.assertRaises(IndexError):
+                getter(None, {}, 0, {})
+            with self.assertRaises(IndexError):
+                getter({"concept:name": "A", "time:timestamp": datetime(2024, 1, 1)},
+                       {"concept:name": "B"}, 1, {"time:timestamp": {}})
+
     def test_trace_matching_and_attribute_anonymization(self):
         package, mechanisms = self._fake_diffprivlib()
         with mock.patch.dict(
