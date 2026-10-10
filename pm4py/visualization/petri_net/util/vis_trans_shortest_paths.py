@@ -184,7 +184,7 @@ def get_shortest_paths(net, enable_extension=False):
             unique_targets = set([x[0] for x in spaths[edge]])
             if len(unique_targets) == 1:
                 spaths[edge] = set()
-                spaths[edge].add((list(unique_targets)[0], 2, 0))
+                spaths[edge].add((next(iter(unique_targets)), 2, 0))
             else:
                 if enable_extension:
                     min_dist = min([x[2] for x in spaths[edge]])

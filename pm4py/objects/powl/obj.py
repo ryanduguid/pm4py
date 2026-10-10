@@ -327,8 +327,8 @@ class StrictPartialOrder(POWL):
                     e_nodes = simplified_node.order.get_end_nodes()
                     if len(s_nodes) == 1 and len(e_nodes) == 1:
                         sub_nodes[node_1] = simplified_node
-                        start_nodes[node_1] = list(s_nodes)[0]
-                        end_nodes[node_1] = list(e_nodes)[0]
+                        start_nodes[node_1] = next(iter(s_nodes))
+                        end_nodes[node_1] = next(iter(e_nodes))
                     else:
                         simplified_nodes[node_1] = simplified_node
             else:

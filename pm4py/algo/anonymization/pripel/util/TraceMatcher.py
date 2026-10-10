@@ -31,6 +31,9 @@ from pm4py.algo.anonymization.pripel.util.trace_levenshtein import trace_levensh
 from pm4py.objects.log import obj
 
 
+_secure_rng = random.SystemRandom()
+
+
 class TraceMatcher:
     def __init__(self, tv_query_log, log):
         self.__timestamp = "time:timestamp"
@@ -143,8 +146,7 @@ class TraceMatcher:
         for variant in self.__trace_variants_log.keys():
             if len(self.__trace_variants_log[variant]) == len(self.__trace_variants_query.get(variant, set())):
                 variantsWithSameCount.add(variant)
-            elif len(self.__trace_variants_log[variant]) > len(self.__trace_variants_query.get(variant, set())) and len(
-                    self.__trace_variants_query.get(variant, set())) != set():
+            elif len(self.__trace_variants_log[variant]) > len(self.__trace_variants_query.get(variant, set())):
                 variantsUnderepresentedInQuery.add(variant)
             elif len(self.__trace_variants_log[variant]) < len(self.__trace_variants_query.get(variant, 0)):
                 variantsOverepresentedInQuery.add(variant)
@@ -204,7 +206,7 @@ class TraceMatcher:
     def __createRandomNewEvent(self, event, activity, distributionOfAttributes, previousEvent, eventNr):
         for attribute in self.__eventStructure[activity]:
             if attribute in distributionOfAttributes and attribute not in event and attribute != self.__timestamp:
-                event[attribute] = random.choice(distributionOfAttributes[attribute])
+                event[attribute] = _secure_rng.choice(distributionOfAttributes[attribute])
             elif attribute == self.__timestamp:
                 event[self.__timestamp] = self.__getNewTimeStamp(previousEvent, event, eventNr,
                                                                  distributionOfAttributes)
@@ -212,14 +214,14 @@ class TraceMatcher:
 
     def __getNewTimeStamp(self, previousEvent, currentEvent, eventNr, distributionOfAttributes):
         if eventNr == 0:
-            timestamp = random.choice(self.__allTimestamps)
+            timestamp = _secure_rng.choice(self.__allTimestamps)
         else:
             if previousEvent["concept:name"] in distributionOfAttributes[self.__timestamp]:
-                timestamp = previousEvent[self.__timestamp] + random.choice(
+                timestamp = previousEvent[self.__timestamp] + _secure_rng.choice(
                     distributionOfAttributes[self.__timestamp][previousEvent["concept:name"]].get(
                         currentEvent["concept:name"], self.__allTimeStampDifferences))
             else:
-                timestamp = previousEvent[self.__timestamp] + random.choice(self.__allTimeStampDifferences)
+                timestamp = previousEvent[self.__timestamp] + _secure_rng.choice(self.__allTimeStampDifferences)
         return timestamp
 
     def __resolveTraceMatching(self, traceMatching, distributionOfAttributes, fillUp):

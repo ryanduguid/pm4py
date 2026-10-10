@@ -116,9 +116,9 @@ def transform_basis(basis, style=None):
             bub.append(-1)
             for i in range(len(vector)):
                 this_row = copy(zeros)
-                this_row[len(set_B)] = list(vector[i])[0]
+                this_row[len(set_B)] = vector[i][0]
                 for j in range(len(modified_base)):
-                    this_row[j] = list(modified_base[j][i])[0]
+                    this_row[j] = modified_base[j][i][0]
 
                 if style == "uniform":
                     this_row[len(set_B) + 1 + i] = -1

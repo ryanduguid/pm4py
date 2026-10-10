@@ -50,8 +50,6 @@ def execute_script():
         for x in net.transitions:
             ocpn["double_arcs_on_activity"][ot][x.label] = True if ot == "ciao2" and x.label is not None else False
 
-        ocpn["tbr_results"][ot] = pm4py.conformance_diagnostics_token_based_replay(log, net, im, fm)
-
         ocpn["tbr_results"][ot] = get_tbr_statistics(log, net, im, fm)
 
     pm4py.view_ocpn(ocpn, format="svg")

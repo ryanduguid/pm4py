@@ -49,7 +49,6 @@ def apply(dfg, parameters=None):
     if parameters is None:
         parameters = {}
 
-    dfg = dfg
     start_activities = exec_utils.get_param_value(
         Parameters.START_ACTIVITIES,
         parameters,

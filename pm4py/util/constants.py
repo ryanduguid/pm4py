@@ -39,7 +39,6 @@ TEST_CUDF_DATAFRAMES_ENVIRONMENT = get_param_from_env(
 def get_default_timestamp_format():
     if importlib.util.find_spec("cudf") or TEST_CUDF_DATAFRAMES_ENVIRONMENT:
         return "%Y-%m-%d %H:%M:%S"
-        pass
 
     return None
 
@@ -47,7 +46,6 @@ def get_default_timestamp_format():
 def get_default_xes_timestamp_format():
     if importlib.util.find_spec("cudf") or TEST_CUDF_DATAFRAMES_ENVIRONMENT:
         return "%Y-%m-%dT%H:%M:%S"
-        pass
 
     return "ISO8601"
 
@@ -55,7 +53,6 @@ def get_default_xes_timestamp_format():
 def get_default_is_aware_enabled():
     if importlib.util.find_spec("cudf") or TEST_CUDF_DATAFRAMES_ENVIRONMENT:
         return False
-        pass
 
     return True
 

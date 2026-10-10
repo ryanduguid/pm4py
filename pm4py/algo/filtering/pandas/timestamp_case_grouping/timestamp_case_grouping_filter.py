@@ -100,6 +100,8 @@ def apply(
             .agg(list)
             .apply(lambda x: " & ".join(sorted(list(x))))
         )
+    else:
+        raise ValueError(f"Unsupported filter type: {filter_type!r}")
 
     ret = ret.reset_index()
     return ret
