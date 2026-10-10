@@ -369,7 +369,8 @@ def tree_sort(tree):
         # always the same hash
         this_hash = int(
             hashlib.md5(
-                str(tree.label).encode(constants.DEFAULT_ENCODING)
+                str(tree.label).encode(constants.DEFAULT_ENCODING),
+                usedforsecurity=False,
             ).hexdigest(),
             16,
         )
