@@ -22,7 +22,7 @@ Contact: info@processintelligence.solutions
 from threading import Thread, Lock
 import pygetwindow as gw
 from pynput import mouse, keyboard
-from datetime import datetime
+from datetime import datetime, timezone
 from pynput.keyboard import Key
 from pm4py.objects.log.obj import Event
 import time
@@ -161,7 +161,7 @@ class WindowsEventLogger(Thread):
         key = str(key) if key is not None else ""
 
         timestamp = time.time()
-        dt_object = datetime.utcfromtimestamp(timestamp)
+        dt_object = datetime.fromtimestamp(timestamp, timezone.utc)
 
         image_path = ""
         img = None
