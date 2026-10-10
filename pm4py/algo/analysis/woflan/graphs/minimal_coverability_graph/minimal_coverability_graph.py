@@ -126,12 +126,12 @@ def minimal_coverability_tree(net, initial_marking, original_net=None):
                 if node in G.nodes:
                     if all(np.less_equal(G.nodes[node]["marking"], m2)):
                         subtree = nx_utils.bfs_tree(G, node)
-                        for node in subtree:
-                            if node in processed_nodes:
-                                processed_nodes.remove(node)
-                            if node in unprocessed_nodes:
+                        for descendant in subtree:
+                            if descendant in processed_nodes:
+                                processed_nodes.remove(descendant)
+                            if descendant in unprocessed_nodes:
                                 del unprocessed_nodes[
-                                    unprocessed_nodes.index(node)
+                                    unprocessed_nodes.index(descendant)
                                 ]
                         remove_subtree(G, node)
                         G.remove_node(node)
