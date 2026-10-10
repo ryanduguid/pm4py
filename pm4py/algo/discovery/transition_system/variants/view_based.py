@@ -102,39 +102,30 @@ def __construct_state_path(
     view_sequence, transition_system, include_data=False
 ):
     for i in range(0, len(view_sequence) - 1):
-        sf = {
-            "state": s
-            for s in transition_system.states
-            if s.name == view_sequence[i][0]
-        }
-        sf = (
-            sf["state"]
-            if len(sf) > 0
-            else ts.TransitionSystem.State(view_sequence[i][0])
-        )
-        st = {
-            "state": s
-            for s in transition_system.states
-            if s.name == view_sequence[i + 1][0]
-        }
-        st = (
-            st["state"]
-            if len(st) > 0
-            else ts.TransitionSystem.State(view_sequence[i + 1][0])
-        )
-        t = {
-            "t": t
-            for t in sf.outgoing
-            if t.name == view_sequence[i][1]
-            and t.from_state == sf
-            and t.to_state == st
-        }
-        if len(t) == 0:
+        sf = None
+        for state in transition_system.states:
+            if state.name == view_sequence[i][0]:
+                sf = state
+        if sf is None:
+            sf = ts.TransitionSystem.State(view_sequence[i][0])
+        st = None
+        for state in transition_system.states:
+            if state.name == view_sequence[i + 1][0]:
+                st = state
+        if st is None:
+            st = ts.TransitionSystem.State(view_sequence[i + 1][0])
+        t = None
+        for transition in sf.outgoing:
+            if (
+                transition.name == view_sequence[i][1]
+                and transition.from_state == sf
+                and transition.to_state == st
+            ):
+                t = transition
+        if t is None:
             t = ts.TransitionSystem.Transition(view_sequence[i][1], sf, st)
             sf.outgoing.add(t)
             st.incoming.add(t)
-        else:
-            t = t["t"]
         if include_data:
             # add the event to the data in both the source state,
             # the sink state and the transition
