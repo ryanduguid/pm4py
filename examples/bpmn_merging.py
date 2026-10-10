@@ -133,7 +133,7 @@ def merge_bpmn_with_swimlanes(main_bpmn, bpmn_to_merge):
 
     # Add nodes with offset
     id_mapping = {}
-    y_offset: int = max_y - list(bpmn_to_merge.get_nodes())[0].get_y() if bpmn_to_merge.get_nodes() else 0
+    y_offset: int = max_y - next(iter(bpmn_to_merge.get_nodes())).get_y() if bpmn_to_merge.get_nodes() else 0
 
     for node in bpmn_to_merge.get_nodes():
         new_node = type(node)(

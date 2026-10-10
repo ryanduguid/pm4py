@@ -210,7 +210,7 @@ def apply(
 
         for i in range(len(case_ids)):
             if row_counts[i] > 0:
-                valid_y_indices = np.where(y_valid_array[i])[0]
+                valid_y_indices = np.nonzero(y_valid_array[i])[0]
                 n_valid = len(valid_y_indices)
 
                 case_ids_expanded[idx:idx+n_valid] = case_ids[i]
@@ -251,7 +251,7 @@ def apply(
 
         for i in range(len(case_ids)):
             if row_counts[i] > 0:
-                valid_x_indices = np.where(x_valid_array[i])[0]
+                valid_x_indices = np.nonzero(x_valid_array[i])[0]
                 n_valid = len(valid_x_indices)
 
                 case_ids_expanded[idx:idx+n_valid] = case_ids[i]
@@ -298,8 +298,8 @@ def apply(
         idx = 0
         for i in range(len(case_ids)):
             if row_combinations[i] > 0:
-                valid_x_indices = np.where(x_valid_array[i])[0]
-                valid_y_indices = np.where(y_valid_array[i])[0]
+                valid_x_indices = np.nonzero(x_valid_array[i])[0]
+                valid_y_indices = np.nonzero(y_valid_array[i])[0]
 
                 # Create cartesian product using numpy operations
                 x_mesh, y_mesh = np.meshgrid(valid_x_indices, valid_y_indices, indexing='ij')

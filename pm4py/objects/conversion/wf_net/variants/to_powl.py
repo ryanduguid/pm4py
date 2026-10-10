@@ -200,7 +200,7 @@ def apply_partial_order_projection(net: PetriNet, subnet_transitions: Set[PetriN
 # ========= Mining Functions =========
 def mine_base_case(net: PetriNet):
     if len(net.transitions) == 1 and len(net.places) == 2 == len(net.arcs):
-        activity = list(net.transitions)[0]
+        activity = next(iter(net.transitions))
         powl_transition = pn_transition_to_powl(activity)
         return powl_transition
     return None
@@ -333,9 +333,9 @@ def remove_initial_and_end_silent_activities(
     while change and len(net.transitions) > 1:
         change = False
         if len(start_places) == 1:
-            start_place = list(start_places)[0]
+            start_place = next(iter(start_places))
             if len(start_place.in_arcs) == 0 and len(start_place.out_arcs) == 1:
-                transition = list(start_place.out_arcs)[0].target
+                transition = next(iter(start_place.out_arcs)).target
                 if len(transition.in_arcs) == 1 and is_silent(transition):
                     pn_util.remove_place(net, start_place)
                     start_places.remove(start_place)
@@ -349,9 +349,9 @@ def remove_initial_and_end_silent_activities(
     while change and len(net.transitions) > 1:
         change = False
         if len(end_places) == 1:
-            end_place = list(end_places)[0]
+            end_place = next(iter(end_places))
             if len(end_place.in_arcs) == 1 and len(end_place.out_arcs) == 0:
-                transition = list(end_place.in_arcs)[0].source
+                transition = next(iter(end_place.in_arcs)).source
                 if len(transition.out_arcs) == 1 and is_silent(transition):
                     pn_util.remove_transition(net, transition)
                     pn_util.remove_place(net, end_place)
