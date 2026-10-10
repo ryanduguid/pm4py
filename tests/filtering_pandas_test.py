@@ -17,6 +17,29 @@ from pm4py.util import constants, pandas_utils
 
 
 class DataframePrefilteringTest(unittest.TestCase):
+    def test_timestamp_case_grouping_modes(self):
+        from pm4py.algo.filtering.pandas.timestamp_case_grouping import timestamp_case_grouping_filter
+
+        dataframe = pd.DataFrame({
+            "case:concept:name": ["c1", "c1", "c1", "c2"],
+            "concept:name": ["B", "A", "C", "D"],
+            "time:timestamp": pd.to_datetime([
+                "2026-01-05T12:00:00Z", "2026-01-05T12:00:00Z",
+                "2026-01-05T13:00:00Z", "2026-01-05T12:00:00Z",
+            ]),
+        })
+        for mode, activities in (("first", ["B", "C", "D"]),
+                                 ("last", ["A", "C", "D"]),
+                                 ("concat", ["A & B", "C", "D"])):
+            with self.subTest(mode=mode):
+                result = timestamp_case_grouping_filter.apply(dataframe, {"filter_type": mode})
+                self.assertEqual(["c1", "c1", "c2"], result["case:concept:name"].tolist())
+                self.assertEqual(activities, result["concept:name"].tolist())
+        for mode in ("middle", "", None):
+            with self.subTest(mode=mode):
+                with self.assertRaisesRegex(ValueError, "Unsupported filter type"):
+                    timestamp_case_grouping_filter.apply(dataframe, {"filter_type": mode})
+
     def test_filter_on_case_size_does_not_reindex_mask(self):
         dataframe = pd.DataFrame(
             {"case": ["c1", "c2", "c2", "c3", "c3", "c3"]}
