@@ -128,8 +128,8 @@ def get_tangible_reachability_and_q_matrix_from_dfg_performance(
             rv.random_variable = exp
             stochastic_map[tr] = rv
         else:
-            input_arc = list(tr.in_arcs)[0]
-            output_arc = list(tr.out_arcs)[0]
+            input_arc = next(iter(tr.in_arcs))
+            output_arc = next(iter(tr.out_arcs))
             rv = random_variable.RandomVariable()
             el = (input_arc.source.name, output_arc.target.name)
             scale = 0

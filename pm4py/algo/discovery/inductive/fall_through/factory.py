@@ -88,10 +88,7 @@ class FallThroughFactory:
                         FlowerModelUVCL,
                     ]
         if inst is IMInstance.IMd:
-            if disable_fallthroughs:
-                return [EmptyTracesDFG, FlowerModelDFG]
-            else:
-                return [EmptyTracesDFG, FlowerModelDFG]
+            return [EmptyTracesDFG, FlowerModelDFG]
         return list()
 
     @classmethod
