@@ -66,7 +66,7 @@ def compute_class_geometry_metrics(
     unique_labels = list(dict.fromkeys(labels))
     centroids = {}
     for label in unique_labels:
-        idx = np.where(y == label)[0]
+        idx = np.nonzero(y == label)[0]
         if idx.size == 0:
             continue
         centroid = Xn[idx].mean(axis=0)
