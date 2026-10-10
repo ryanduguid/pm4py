@@ -189,6 +189,29 @@ class WoflanTest(unittest.TestCase):
         initial_marking[p_1] = 1
         mcg = minimal_coverability_graph.apply(net, initial_marking)
 
+    def test_mct_prunes_whole_covered_subtree(self):
+        # A covered node with children must leave the tree together with its
+        # subtree; no remaining marking may be strictly covered by another.
+        net = PetriNet("covered_subtree")
+        p_0, p_1, p_2 = (PetriNet.Place(name) for name in ("p0", "p1", "p2"))
+        t_0, t_1, t_2, t_3 = (PetriNet.Transition(name, name) for name in ("t0", "t1", "t2", "t3"))
+        for place in (p_0, p_1, p_2):
+            net.places.add(place)
+        for transition in (t_0, t_1, t_2, t_3):
+            net.transitions.add(transition)
+        for source, target in ((p_0, t_0), (p_0, t_1), (p_1, t_3), (p_2, t_2), (t_0, p_1),
+                               (t_0, p_2), (t_1, p_2), (t_2, p_1), (t_3, p_2)):
+            petri_utils.add_arc_from_to(source, target, net)
+        initial_marking = Marking({p_0: 1})
+        tree, _, _ = minimal_coverability_graph.minimal_coverability_tree(net, initial_marking)
+        markings = [tree.nodes[node]["marking"] for node in tree.nodes]
+        for smaller in markings:
+            for larger in markings:
+                self.assertFalse(
+                    all(np.less_equal(smaller, larger)) and not np.array_equal(smaller, larger),
+                    f"{smaller} is strictly covered by {larger}",
+                )
+
     def test_compute_unbounded_sequences(self):
         tree = nx_utils.DiGraph()
         tree.add_node(0, marking=np.array([0]))
