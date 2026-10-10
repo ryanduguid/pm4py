@@ -68,6 +68,16 @@ class StatisticsDfTest(unittest.TestCase):
         df = self.get_dataframe()
         attributes_get.get_events_distribution(df)
 
+    def test_events_distribution_rejects_unknown_type(self):
+        import pandas as pd
+        from pm4py.statistics.attributes.pandas import get as attributes_get
+
+        df = pd.DataFrame({"time:timestamp": pd.to_datetime(["2026-01-05T12:00:00Z"])})
+        for distribution in ("centuries", "", None):
+            with self.subTest(distribution=distribution):
+                with self.assertRaisesRegex(ValueError, "Unsupported distribution type"):
+                    attributes_get.get_events_distribution(df, distribution)
+
     def test_msd(self):
         from pm4py.algo.discovery.minimum_self_distance.variants import pandas as msd_pandas
         df = self.get_dataframe()

@@ -26,7 +26,6 @@ from pm4py.objects.petri_net.utils import align_utils
 from pm4py.util.constants import PARAMETER_CONSTANT_ACTIVITY_KEY
 from pm4py.util.xes_constants import DEFAULT_NAME_KEY
 from pm4py.util import exec_utils
-from pm4py.objects.petri_net.semantics import enabled_transitions
 from enum import Enum
 from copy import copy
 import heapq
@@ -110,11 +109,6 @@ def __transform_model_to_mem_efficient_structure(
     if parameters is None:
         parameters = {}
 
-    activity_key = exec_utils.get_param_value(
-        Parameters.ACTIVITY_KEY, parameters, DEFAULT_NAME_KEY
-    )
-    labels = sorted(list(set(x[activity_key] for x in trace)))
-
     model_cost_function = exec_utils.get_param_value(
         Parameters.PARAM_MODEL_COST_FUNCTION, parameters, None
     )
@@ -125,15 +119,7 @@ def __transform_model_to_mem_efficient_structure(
             if t.label is not None:
                 model_cost_function[t] = align_utils.STD_MODEL_LOG_MOVE_COST
             else:
-                preset_t = Marking()
-                for a in t.in_arcs:
-                    preset_t[a.source] = a.weight
-                en_t = enabled_transitions(net, preset_t)
-                vis_t_trace = [t for t in en_t if t.label in labels]
-                if len(vis_t_trace) == 0:
-                    model_cost_function[t] = align_utils.STD_TAU_COST
-                else:
-                    model_cost_function[t] = align_utils.STD_TAU_COST
+                model_cost_function[t] = align_utils.STD_TAU_COST
 
     places_dict = {place: index for index, place in enumerate(net.places)}
     trans_dict = {trans: index for index, trans in enumerate(net.transitions)}
