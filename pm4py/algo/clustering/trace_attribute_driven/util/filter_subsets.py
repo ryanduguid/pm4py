@@ -441,9 +441,7 @@ def act_dist(var_list_1, var_list_2, log1, log2, freq_thres):
                     * var_count_max.iloc[i]
                     * var_count_min.iloc[j]
                 )  # weighted with trace frequency
-    if len(var_list_1) >= len(var_list_2):
-        dist_matrix = dist_matrix
-    else:
+    if len(var_list_1) < len(var_list_2):
         dist_matrix = np.transpose(dist_matrix)
 
     return dist_matrix

@@ -34,11 +34,10 @@ class SingleActivityBaseCaseUVCL(BaseCase[IMDataStructureUVCL]):
         obj=IMDataStructureUVCL,
         parameters: Optional[Dict[str, Any]] = None,
     ) -> bool:
-        if len(obj.data_structure.keys()) != 1:
-            return False
-        if len(list(obj.data_structure.keys())[0]) > 1:
-            return False
-        return True
+        return (
+            len(obj.data_structure.keys()) == 1
+            and len(next(iter(obj.data_structure.keys()))) <= 1
+        )
 
     @classmethod
     def leaf(

@@ -49,5 +49,5 @@ def pick_transition(et, smap):
             probability_distribution.append(1.0 / float(len(wmap)))
         else:
             probability_distribution.append(wmap[ct] / wmap_sv)
-    ct = list(choice(et, 1, p=probability_distribution))[0]
+    ct = choice(et, 1, p=probability_distribution)[0]
     return ct

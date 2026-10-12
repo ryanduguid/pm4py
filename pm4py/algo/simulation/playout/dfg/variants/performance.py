@@ -67,7 +67,7 @@ def dict_based_choice(dct: Dict[str, float]) -> str:
     if summ > 0:
         for i in range(len(Y)):
             Y[i] = Y[i] / summ
-        return list(choice(X, 1, p=Y))[0]
+        return choice(X, 1, p=Y)[0]
 
 
 def apply(

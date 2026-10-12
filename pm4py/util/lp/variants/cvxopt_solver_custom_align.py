@@ -36,7 +36,6 @@ this_options["tol_bnd"] = 10**-5
 this_options["tol_piv"] = 10**-5
 this_options["obj_ll"] = 10**-5
 this_options["obj_ul"] = 10**-5
-this_options["obj_ul"] = 10**-5
 
 
 def custom_solve_lp(c, G, h, A, b):

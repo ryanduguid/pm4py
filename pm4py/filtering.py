@@ -64,7 +64,7 @@ def _normalize_sequence_argument(value):
         return [[value]]
     if isinstance(value, (list, tuple)):
         if value and all(isinstance(elem, (list, tuple)) for elem in value):
-            return [list(elem) if isinstance(elem, tuple) else list(elem) for elem in value]
+            return [list(elem) for elem in value]
         if all(isinstance(elem, str) for elem in value):
             return [list(value)]
     return [[str(value)]]

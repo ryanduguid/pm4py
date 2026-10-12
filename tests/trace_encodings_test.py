@@ -3,6 +3,7 @@ import math
 import os
 import unittest
 import warnings
+from unittest import mock
 
 import pandas as pd
 
@@ -76,6 +77,48 @@ class TraceEncodingsTest(unittest.TestCase):
                 "@@event_index": [1.0, 2.0, 3.0, 10.0, None, None],
             }
         )
+
+    @unittest.skipUnless(importlib.util.find_spec("polars"), "polars is not installed")
+    def test_locally_linear_embedding_dataframe_routes(self):
+        import numpy as np
+        import polars as pl
+        from pm4py.algo.transformation.trace_encodings.util import locally_linear_embedding
+        from pm4py.objects.conversion.log import converter
+
+        dataframe = self._numeric_feature_dataframe().iloc[::-1]
+        columns = ["case:concept:name", "concept:name", "time:timestamp"]
+        expected_x = sorted(dataframe["time:timestamp"].groupby(dataframe["case:concept:name"]).min())
+        expected_data = None
+        for custom_keys in (False, True):
+            current = dataframe
+            parameters = {}
+            if custom_keys:
+                current = dataframe.rename(columns=dict(zip(columns, ("case", "activity", "when"))))
+                parameters = {
+                    locally_linear_embedding.Parameters.CASE_ID_KEY: "case",
+                    locally_linear_embedding.Parameters.ACTIVITY_KEY: "activity",
+                    locally_linear_embedding.Parameters.TIMESTAMP_KEY: "when",
+                }
+            selected = [parameters.get(key, default) for key, default in zip(
+                (locally_linear_embedding.Parameters.CASE_ID_KEY,
+                 locally_linear_embedding.Parameters.ACTIVITY_KEY,
+                 locally_linear_embedding.Parameters.TIMESTAMP_KEY), columns
+            )]
+            event_log = converter.apply(current[selected], parameters=parameters)
+            lazyframe = pl.DataFrame(current.to_dict(orient="list")).lazy()
+            for kind, value in (("EventLog", event_log), ("pandas", current), ("Polars", lazyframe)):
+                with self.subTest(custom_keys=custom_keys, kind=kind):
+                    estimator = mock.Mock()
+                    estimator.fit_transform.side_effect = lambda data: np.arange(len(data), dtype=float).reshape(-1, 1)
+                    with mock.patch.object(locally_linear_embedding.ml_utils, "LocallyLinearEmbedding", return_value=estimator):
+                        x, y = locally_linear_embedding.apply(value, parameters=parameters)
+                    self.assertEqual(expected_x, x)
+                    np.testing.assert_allclose(y, [0.0, 0.5, 1.5])
+                    data = estimator.fit_transform.call_args.args[0]
+                    if expected_data is None:
+                        expected_data = data
+                    else:
+                        np.testing.assert_array_equal(expected_data, data)
 
     def test_trace_based_new_package(self):
         log = self._read_log()

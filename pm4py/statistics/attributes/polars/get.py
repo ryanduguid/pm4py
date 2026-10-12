@@ -104,39 +104,41 @@ def get_events_distribution(
     all_values = None
 
     if distr_type == "days_month":
-        serie = lf.select(pl.col(timestamp_key).dt.day().alias("value")).group_by("value").count()
+        serie = lf.select(pl.col(timestamp_key).dt.day().alias("value")).group_by("value").len(name="count")
         values_df = serie.collect()
         values = Counter(dict(zip(values_df["value"].to_list(), values_df["count"].to_list())))
         all_values = Counter({i: 0 for i in range(1, 32)})
     elif distr_type == "months":
-        serie = lf.select(pl.col(timestamp_key).dt.month().alias("value")).group_by("value").count()
+        serie = lf.select(pl.col(timestamp_key).dt.month().alias("value")).group_by("value").len(name="count")
         values_df = serie.collect()
         values = Counter(dict(zip(values_df["value"].to_list(), values_df["count"].to_list())))
         all_values = Counter({i: 0 for i in range(1, 13)})
     elif distr_type == "years":
-        serie = lf.select(pl.col(timestamp_key).dt.year().alias("value")).group_by("value").count()
+        serie = lf.select(pl.col(timestamp_key).dt.year().alias("value")).group_by("value").len(name="count")
         values_df = serie.collect()
         values = Counter(dict(zip(values_df["value"].to_list(), values_df["count"].to_list())))
         all_values = Counter(
             {i: 0 for i in range(min(values), max(values) + 1)}
         )
     elif distr_type == "hours":
-        serie = lf.select(pl.col(timestamp_key).dt.hour().alias("value")).group_by("value").count()
+        serie = lf.select(pl.col(timestamp_key).dt.hour().alias("value")).group_by("value").len(name="count")
         values_df = serie.collect()
         values = Counter(dict(zip(values_df["value"].to_list(), values_df["count"].to_list())))
         all_values = Counter({i: 0 for i in range(0, 24)})
     elif distr_type == "days_week":
-        serie = lf.select(pl.col(timestamp_key).dt.weekday().alias("value")).group_by("value").count()
+        serie = lf.select(pl.col(timestamp_key).dt.weekday().alias("value")).group_by("value").len(name="count")
         values_df = serie.collect()
         # Convert from Monday=1 to Monday=0 format to match pandas
         values_dict = dict(zip(values_df["value"].to_list(), values_df["count"].to_list()))
         values = Counter({k-1: v for k, v in values_dict.items()})
         all_values = Counter({i: 0 for i in range(0, 7)})
     elif distr_type == "weeks":
-        serie = lf.select(pl.col(timestamp_key).dt.week().alias("value")).group_by("value").count()
+        serie = lf.select(pl.col(timestamp_key).dt.week().alias("value")).group_by("value").len(name="count")
         values_df = serie.collect()
         values = Counter(dict(zip(values_df["value"].to_list(), values_df["count"].to_list())))
         all_values = Counter({i: 0 for i in range(0, 53)})
+    else:
+        raise ValueError(f"Unsupported distribution type: {distr_type!r}")
 
     # make sure that all the possible values appear
     for v in all_values:
