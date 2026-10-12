@@ -105,7 +105,11 @@ def apply(
         case_id_key = exec_utils.get_param_value(
             Parameters.CASE_ID_KEY, parameters, constants.CASE_CONCEPT_NAME
         )
-        log = log[[case_id_key, activity_key, timestamp_key]]
+        columns = [case_id_key, activity_key, timestamp_key]
+        if pandas_utils.is_polars_lazyframe(log):
+            log = log.select(columns)
+        else:
+            log = log.loc[:, columns]
 
     log = log_converter.apply(
         log, variant=log_converter.Variants.TO_EVENT_LOG, parameters=parameters

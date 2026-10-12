@@ -88,7 +88,6 @@ def project_univariate(
                     values[start_indexes[i]: start_indexes[i] + case_sizes[i]]
                 )
             return cl
-    return None
 
 
 def discover_dfg(log: Union[UCL, MCL], index: int = 0) -> DFG:

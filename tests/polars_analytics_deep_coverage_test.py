@@ -302,6 +302,22 @@ class PolarsAnalyticsDeepCoverageTest(unittest.TestCase):
         unchanged = ltl_checker.four_eyes_principle(self.lazy, ["A"]).collect()
         self.assertEqual(unchanged.height, self.df.height)
 
+    def test_event_distribution_counts_match_pandas(self):
+        from pm4py.statistics.attributes.pandas import get as pandas_get
+
+        dataframe = pd.DataFrame(self.df.to_dicts())
+        for distribution in ("days_month", "months", "years", "hours", "days_week", "weeks"):
+            with self.subTest(distribution=distribution):
+                expected = pandas_get.get_events_distribution(dataframe, distribution)
+                self.assertEqual(expected, attributes_get.get_events_distribution(self.lazy, distribution))
+                self.assertEqual(len(dataframe), sum(expected[1]))
+
+    def test_event_distribution_rejects_unknown_type(self):
+        for distribution in ("centuries", "", None):
+            with self.subTest(distribution=distribution):
+                with self.assertRaisesRegex(ValueError, "Unsupported distribution type"):
+                    attributes_get.get_events_distribution(self.lazy, distribution)
+
     def test_polars_attribute_statistics_distributions_and_kdes(self):
         for distribution, expected_length in (
             ("days_month", 31),

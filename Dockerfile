@@ -25,5 +25,6 @@ RUN python3 -m pip install --upgrade pip
 #RUN cd / && wget https://ftp.gnu.org/gnu/glpk/glpk-5.0.tar.gz && tar xzvf glpk-5.0.tar.gz && cd /glpk-5.0 && ./configure && make && make install
 #RUN cd / && git clone https://github.com/cvxopt/cvxopt.git && cd /cvxopt && sed -i 's/BUILD_GLPK = 0/BUILD_GLPK = 1/' setup.py && python3 setup.py build && python3 setup.py install
 
-COPY . /app
+COPY pyproject.toml README.md LICENSE /app/
+COPY pm4py /app/pm4py
 RUN python3 -m pip install "/app[stable]"
