@@ -43,7 +43,7 @@ DUMMY_TYPE = "dummy"
 def ot_to_color(ot: str) -> str:
     """Generates a deterministic hex color based on the object type string."""
     import hashlib
-    hash_obj = hashlib.md5(ot.encode('utf-8'))
+    hash_obj = hashlib.md5(ot.encode('utf-8'), usedforsecurity=False)
     hash_hex = hash_obj.hexdigest()
     color = "#" + hash_hex[:6]
     return color

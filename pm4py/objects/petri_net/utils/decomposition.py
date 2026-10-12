@@ -119,7 +119,8 @@ def decompose(net, im, fm):
                 list(
                     int(
                         hashlib.md5(
-                            t.name.encode(constants.DEFAULT_ENCODING)
+                            t.name.encode(constants.DEFAULT_ENCODING),
+                            usedforsecurity=False,
                         ).hexdigest(),
                         16,
                     )
@@ -196,7 +197,8 @@ def merge_comp(comp1, comp2):
             list(
                 int(
                     hashlib.md5(
-                        t.name.encode(constants.DEFAULT_ENCODING)
+                        t.name.encode(constants.DEFAULT_ENCODING),
+                        usedforsecurity=False,
                     ).hexdigest(),
                     16,
                 )
