@@ -89,8 +89,6 @@ def add_xor_gateway(bpmn, counts):
     from pm4py.objects.bpmn.obj import BPMN
 
     counts.inc_xor_gateways()
-    split_name = "xor_" + str(counts.num_xor_gateways) + "_split"
-    join_name = "xor_" + str(counts.num_xor_gateways) + "_join"
 
     split = BPMN.ExclusiveGateway(
         name="", gateway_direction=BPMN.Gateway.Direction.DIVERGING
@@ -108,8 +106,6 @@ def add_parallel_gateway(bpmn, counts):
     from pm4py.objects.bpmn.obj import BPMN
 
     counts.inc_para_gateways()
-    split_name = "parallel_" + str(counts.num_para_gateways) + "_split"
-    join_name = "parallel_" + str(counts.num_para_gateways) + "_join"
 
     split = BPMN.ParallelGateway(
         name="", gateway_direction=BPMN.Gateway.Direction.DIVERGING
@@ -126,8 +122,6 @@ def add_inclusive_gateway(bpmn, counts):
     from pm4py.objects.bpmn.obj import BPMN
 
     counts.inc_para_gateways()
-    split_name = "parallel_" + str(counts.num_para_gateways) + "_split"
-    join_name = "parallel_" + str(counts.num_para_gateways) + "_join"
 
     split = BPMN.InclusiveGateway(
         name="", gateway_direction=BPMN.Gateway.Direction.DIVERGING
