@@ -971,7 +971,6 @@ Tuple[Dict[str, str], Dict[str, str]]:
 
         for vk in layer_k:
             neighbors = []
-            neighbor_dir = 'up' if sweep_down else 'down'
 
             arcs_data = ocpn_layout.get("arcs", {})
             fixed_layer_nodes = set(current_layering[fixed_layer_idx])
