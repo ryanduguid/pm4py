@@ -2,7 +2,7 @@
 
 **Fork status**
 
-[![Fork code quality](https://app.codacy.com/project/badge/Grade/9dde3a80e0f94253878bad3c0fd1fcf7?branch=release)](https://app.codacy.com/gh/ryanduguid/pm4py/dashboard)
+[![Fork code quality](https://img.shields.io/codacy/grade/9dde3a80e0f94253878bad3c0fd1fcf7/release?style=flat&labelColor=000000)](https://app.codacy.com/gh/ryanduguid/pm4py/dashboard)
 
 PM4Py is a python library that supports state-of-the-art process mining algorithms in Python.
 It is open source and intended to be used in both academia and industry projects.
